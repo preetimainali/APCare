@@ -1,0 +1,494 @@
+# HCA Hackathon Prototype Rules
+
+## Project Context
+This project is a hackathon prototype for HCA Healthcare's "Prototype Innovation" category.
+
+Goal:
+Build a responsive application using hospital census data that allows hospital operators to:
+
+- View occupancy and capacity at a glance
+- Monitor trends over time
+- Receive alerts when thresholds are exceeded
+- View predictions of future occupancy
+- Customize dashboards
+- Share insights
+
+This is a prototype, not a production system.
+
+---
+
+## Dataset Context
+The application uses hospital census metrics including:
+
+- Admissions
+- Discharges
+- Births
+- ICU Occupancy
+- Total Census
+- Bed Capacity
+- Facility Information
+
+The app must visualize trends and forecast occupancy.
+
+---
+
+## Technical Goals
+The code should prioritize:
+
+- Reliability
+- Readability
+- Modularity
+- Rapid prototyping
+- Clean UI
+- Safe refactoring
+
+Avoid unnecessary complexity.
+
+---
+
+## Coding Standards
+
+### DO:
+
+- Write clean, maintainable code
+- Use descriptive variable names
+- Add comments for non-obvious logic
+- Keep functions small and focused
+- Preserve existing functionality when modifying code
+- Ask before making breaking architectural changes
+- Suggest improvements without auto-applying destructive changes
+
+### DO NOT:
+
+- Remove working features without confirmation
+- Refactor large sections without explaining impact
+- Introduce breaking changes
+- Overengineer solutions
+- Add unnecessary dependencies
+
+---
+
+## Prototype Constraints
+
+Remember:
+
+- This is a 24-hour hackathon prototype
+- Speed and clarity matter more than perfection
+- Focus on visible features for judges:
+  - Dashboard
+  - Predictions
+  - Alerts
+  - Customization
+
+---
+
+## UI Expectations
+
+Prioritize:
+
+- Clear dashboards
+- Executive-friendly visuals
+- Simple navigation
+- Responsiveness
+
+Design for hospital operators, not developers.
+
+---
+
+## AI Behavior Instructions
+
+Act as a senior software engineer assisting a team under time pressure.
+
+When suggesting code:
+
+1. Explain what you are changing
+2. Explain why
+3. Identify risks
+4. Avoid breaking existing features
+
+If unsure, ask clarifying questions before implementing.
+
+---
+
+## Predictive Feature Guidance
+
+When implementing forecasting:
+
+- Prefer simple models first (moving average, regression)
+- Explain assumptions
+- Keep logic transparent
+- Avoid black-box approaches
+
+---
+
+## Alerts Feature Guidance
+
+Alerts should:
+
+- Be configurable
+- Avoid alert fatigue
+- Be based on thresholds and predictions
+
+---
+
+## Final Goal
+
+Help the team produce a polished, demo-ready prototype that clearly demonstrates value to hospital executives.
+
+## Safety Rule
+
+Before modifying existing code:
+
+- Check for dependencies
+- Identify potential breakage
+- Suggest incremental changes
+- Prefer additive changes over destructive edits
+
+# UI Design Rules — Non-Generic Executive Dashboard
+
+## Design Goal
+
+Create a distinctive, professional UI that does NOT resemble generic AI-generated dashboards or admin templates.
+
+The interface should feel like a custom-built product for hospital executives.
+
+---
+
+## Design Principles
+
+### 1. Avoid Generic Layouts
+
+DO NOT:
+
+- Use default dashboard templates
+- Use standard sidebar + topbar layouts without customization
+- Use plain card grids without hierarchy
+
+INSTEAD:
+
+- Create a strong visual hierarchy
+- Use asymmetric layouts when appropriate
+- Design a clear focal point (e.g., occupancy command center)
+
+---
+
+### 2. Executive Command Center Aesthetic
+
+The UI should feel like a hospital operations control panel:
+
+- Clean
+- Data-dense but readable
+- Calm and trustworthy
+- Professional, not playful
+
+Avoid startup-style playful UI.
+
+---
+
+### 3. Color & Typography
+
+Avoid default Tailwind or Material colors.
+
+Use a custom palette:
+
+- Medical blues
+- Neutral grays
+- Subtle alert colors (amber, red)
+- High contrast for readability
+
+Typography:
+
+- Professional
+- Clean
+- Not default browser fonts
+
+---
+
+### 4. Meaningful Visual Components
+
+Prefer:
+
+- Gauges for capacity
+- Status indicators
+- Risk levels
+- Trend arrows
+- Heatmaps
+
+Avoid generic cards with random stats.
+
+---
+
+### 5. Layout Concept
+
+Design around a main concept:
+
+"Hospital Command Center"
+
+Key sections:
+
+- System status overview
+- Critical alerts panel
+- Capacity visualization
+- Trend forecasting area
+
+---
+
+### 6. Micro-Interactions
+
+Include subtle polish:
+
+- Hover states
+- Animated transitions
+- Highlighted alerts
+- Visual feedback
+
+Avoid flashy animations.
+
+---
+
+## Behavior Instructions for Cursor
+
+When generating UI code:
+
+1. Propose a layout concept first
+2. Explain design choices
+3. Avoid copying common dashboard patterns
+4. Prioritize clarity and uniqueness
+5. Optimize for demo impact
+
+---
+
+## Prototype Context Reminder
+
+This UI will be judged in a hackathon.
+
+It must:
+
+- Look impressive quickly
+- Communicate value instantly
+- Stand out visually from other teams
+
+# HCA Hackathon — Winning Prototype Rules
+
+## Project Context
+
+This project is a 24-hour hackathon prototype for HCA Healthcare.
+
+Objective:
+Build a responsive application that enables hospital operators and executives to monitor capacity, predict occupancy, receive alerts, and make decisions quickly using census data.
+
+This is a demo-ready prototype optimized for judging criteria, not a production system.
+
+---
+
+# PRIMARY OBJECTIVE
+
+Maximize performance on the official judging rubric.
+
+All code and design decisions should prioritize features that score highly.
+
+---
+
+# RUBRIC-DRIVEN DEVELOPMENT
+
+## 1. Interactive UI & Usability (15%)
+
+Design an intuitive, executive-friendly interface.
+
+Requirements:
+
+- Clear navigation
+- Logical user flow
+- Minimal learning curve
+- Immediate visibility of key metrics
+- Responsive layout (desktop-first, mobile-capable)
+- Tooltips and explanations
+
+UI should communicate value within 5 seconds.
+
+---
+
+## 2. Predictive Capability (15%)
+
+Implement transparent occupancy forecasting.
+
+Requirements:
+
+- Clearly defined prediction method
+- Visible prediction output
+- Explanation of prediction drivers
+- Performance metrics (if possible)
+- Confidence indicators
+
+Prefer simple, explainable models over complex black-box models.
+
+Prediction must influence alerts and decisions.
+
+---
+
+## 3. Customizability (14%)
+
+Allow executives to tailor the system.
+
+Include:
+
+- Adjustable filters (facility, time range, metrics)
+- Configurable thresholds for alerts
+- Saveable dashboard views
+- Adjustable display settings
+
+Users should feel in control.
+
+---
+
+## 4. Data Integration & Correctness (12%)
+
+Ensure reliable data handling.
+
+Requirements:
+
+- Clean ingestion of dataset
+- Handle missing or inconsistent values gracefully
+- Reproducible calculations
+- Transparent transformations
+
+Never fabricate data silently.
+
+---
+
+## 5. Sharing & Collaboration (10%)
+
+Enable easy sharing of insights.
+
+Include:
+
+- Export options (PDF, CSV, etc.)
+- Shareable dashboard views
+- Snapshot capability
+
+Make it easy for executives to communicate findings.
+
+---
+
+## 6. Configurable Alerts (10%)
+
+Implement intelligent notification system.
+
+Requirements:
+
+- User-defined thresholds
+- Alerts based on predicted conditions
+- Clear logic for triggering alerts
+- Avoid alert fatigue
+- Prioritize critical alerts
+
+Alerts should feel actionable, not noisy.
+
+---
+
+## 7. Security & Access Control (8%)
+
+Demonstrate role-based access concept.
+
+Include:
+
+- Basic role separation (Admin vs Operator)
+- Secure handling of shared views
+- Simulated authentication if necessary
+
+Does not need production security, but should demonstrate awareness.
+
+---
+
+## 8. Documentation & Testing (6%)
+
+Ensure maintainability.
+
+Include:
+
+- Clear README
+- Setup instructions
+- Comments for complex logic
+- Testing notes (manual is acceptable)
+
+---
+
+## 9. AI Usage Transparency (5%)
+
+Track AI assistance.
+
+Requirements:
+
+- Document what AI was used for
+- Explain benefits and risks
+- Show human review occurred
+
+---
+
+## 10. Presentation & Polish (5%)
+
+Deliver a refined demo.
+
+Focus on:
+
+- Visual consistency
+- Clean layout
+- Professional appearance
+- Smooth interactions
+- No obvious bugs
+
+---
+
+# UI DESIGN DIRECTIVE
+
+Create a distinctive "Hospital Command Center" interface.
+
+Avoid generic dashboards.
+
+Prioritize:
+
+- Capacity gauges
+- Alert panels
+- Trend visualizations
+- Forecast displays
+- Status indicators
+
+---
+
+# PROTOTYPE STRATEGY
+
+Remember:
+
+This is a hackathon prototype.
+
+Prioritize visible impact over backend perfection.
+
+Build features that judges can see and interact with.
+
+---
+
+# SAFE CODING BEHAVIOR
+
+Act as a senior engineer on a time-constrained team.
+
+Before modifying code:
+
+- Assess risk
+- Preserve working features
+- Prefer additive changes
+- Explain major refactors
+
+Avoid breaking existing functionality.
+
+---
+
+# FINAL GOAL
+
+Produce a polished, demo-ready application that clearly demonstrates:
+
+- Decision support for hospital executives
+- Predictive capacity management
+- Actionable alerts
+- Professional usability
+
+Every feature should help judges quickly understand the value of the solution.

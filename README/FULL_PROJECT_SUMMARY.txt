@@ -1,0 +1,1184 @@
+================================================================================
+  HOSPITAL COMMAND CENTER — COMPLETE PROJECT SUMMARY
+  HCA Healthcare Hackathon Prototype
+  Generated: March 1, 2026
+================================================================================
+
+
+TABLE OF CONTENTS
+─────────────────
+  1.  Project Overview
+  2.  Tech Stack
+  3.  File Inventory (every file)
+  4.  Data Pipeline (raw Excel → dashboard)
+  5.  Frontend Architecture
+  6.  Page-by-Page Breakdown
+  7.  Every Component — Detailed
+  8.  Every Library Module — Detailed
+  9.  Data Files (JSON) — Structure
+  10. Prediction Model
+  11. Model Validation & Backtesting
+  12. Role-Based Access Control (RBAC)
+  13. Alert System (configurable)
+  14. Export Feature (PDF + CSV)
+  15. Secure Share Simulation
+  16. Unified Timeline
+  17. Date Range Filtering
+  18. Styling & Theme
+  19. Configuration & Build
+  20. Documentation Files
+  21. What Is NOT Built (known gaps)
+
+
+================================================================================
+1.  PROJECT OVERVIEW
+================================================================================
+
+"Hospital Command Center" is a hackathon prototype built for HCA Healthcare.
+It is a responsive web application that:
+
+  • Visualizes real hospital census data from 10 HCA facilities
+  • Shows overall occupancy and ICU capacity in real time
+  • Displays historical trends (census, ICU, admissions, discharges, births)
+  • Predicts future occupancy using a transparent statistical model
+  • Generates configurable alerts when thresholds are exceeded
+  • Validates prediction accuracy with multi-window backtesting
+  • Supports role-based access control (Admin, CNO, CFO, Analyst, custom)
+  • Allows customization by facility and date range
+  • Exports professional PDF/CSV executive briefs
+  • Simulates secure enterprise sharing (@hca.org restriction)
+
+The prototype uses pre-processed static JSON files instead of a live backend API.
+All data originates from a real Excel dataset: "HCA Census Metrics.xlsx".
+
+
+================================================================================
+2.  TECH STACK
+================================================================================
+
+Frontend:
+  • Next.js 14.2 (App Router)
+  • React 18.2
+  • TypeScript 5
+  • Tailwind CSS 3.4 (custom dark "bunker" theme)
+  • Recharts 2.12 (charts built on D3.js)
+  • jsPDF 4.2 (client-side PDF generation)
+
+Data Processing (offline, run once):
+  • Python 3 with openpyxl (Excel reading)
+  • Standard library: json, datetime, collections, math
+  • Custom statistical model (EMA + linear trend + seasonal)
+
+Backend (scaffolded but not implemented):
+  • FastAPI structure exists as placeholder
+  • No live API — frontend consumes static JSON
+
+Fonts:
+  • JetBrains Mono — tabular/numeric values
+  • system-ui — general sans-serif
+
+Package Manager: npm
+Build: next build (static export)
+
+
+================================================================================
+3.  FILE INVENTORY — EVERY FILE IN THE PROJECT
+================================================================================
+
+Total files: ~56 (excluding node_modules, .next, .DS_Store)
+
+── Root ──
+  .cursor/rules/project-standards.mdc    Cursor rules for AI coding standards
+  .cursor/rules/Untitled                 Additional HCA hackathon context rules
+
+── README/ ──
+  README/README.md                       Main project overview and feature list
+  README/ARCHITECTURE.md                 Folder structure and architecture design
+  README/DATA_INTEGRITY.txt              Data pipeline transparency document
+  README/Hospital_Command_Center_Summary.pdf   PDF summary (generated via reportlab)
+  README/FULL_PROJECT_SUMMARY.txt        This file
+
+── data/ ──
+  data/HCA Census Metrics.xlsx           Source dataset (10 facilities, Jan 1–Feb 6, 2026)
+  data/schema/.gitkeep                   Placeholder for schema definitions
+
+── docs/ ──
+  docs/.gitkeep                          Placeholder for documentation
+
+── backend/ ──
+  backend/README.md                      Backend architecture overview (not implemented)
+  backend/.gitkeep                       Placeholder
+
+── frontend/ ──
+  frontend/package.json                  Dependencies and scripts
+  frontend/package-lock.json             Lockfile for reproducible installs
+  frontend/tsconfig.json                 TypeScript config with @/* path alias
+  frontend/next.config.mjs               Next.js configuration (minimal)
+  frontend/next-env.d.ts                 Next.js TypeScript reference
+  frontend/postcss.config.mjs            PostCSS with Tailwind + Autoprefixer
+  frontend/tailwind.config.ts            Custom theme (bunker, signal colors)
+  frontend/README.md                     Frontend overview
+  frontend/.gitkeep                      Placeholder
+
+── frontend/app/ ──
+  frontend/app/layout.tsx                Root layout (RoleProvider, AdminPanel, fonts)
+  frontend/app/page.tsx                  Main dashboard page
+  frontend/app/globals.css               Global CSS (Tailwind directives, custom classes)
+  frontend/app/validation/page.tsx       Validation & backtesting page
+
+── frontend/components/ (23 files) ──
+  AlertPanel.tsx                         Alert list with expandable reasons
+  AlertToast.tsx                         Popup toast notifications
+  AlertSettingsPanel.tsx                 Alert configuration modal
+  ExportModal.tsx                        PDF/CSV export configuration panel
+  ShareModal.tsx                         Secure share simulation modal
+  UnifiedTimeline.tsx                    Combined historical + forecast chart
+  DateRangeFilter.tsx                    Date range picker with presets
+  RoleSwitcher.tsx                       Role dropdown switcher
+  AdminPanel.tsx                         Role management slide-in panel
+  RiskClassification.tsx                 Facility risk tier table
+  PredictedVsActual.tsx                  Backtest prediction vs actual chart
+  AccuracyMetrics.tsx                    Validation metrics display
+  DriverBreakdown.tsx                    Prediction driver pie chart
+  CapacityGauge.tsx                      Semi-circle occupancy gauge
+  ICURiskIndicator.tsx                   ICU risk semi-circle gauge
+  CapacityOverview.tsx                   6-stat capacity grid
+  HospitalSelector.tsx                   Facility dropdown selector
+  TrendChart.tsx                         72h trend chart (legacy, replaced by UnifiedTimeline)
+  ForecastChart.tsx                      7-day forecast chart (legacy, replaced by UnifiedTimeline)
+  FlowTrendChart.tsx                     Patient flow bars (legacy, replaced by UnifiedTimeline)
+  PredictionPanel.tsx                    Forecast summary cards (legacy)
+  TotalCensus.tsx                        Census count panel (legacy, replaced by CapacityGauge)
+  ICUOccupancy.tsx                       ICU bar display (legacy, replaced by ICURiskIndicator)
+
+── frontend/lib/ ──
+  lib/types.ts                           All TypeScript interfaces and types
+  lib/data.ts                            Data access layer (loads JSON, generates alerts)
+  lib/roles.tsx                          Role context provider and RBAC logic
+  lib/report.ts                          Export payload types and helpers
+  lib/pdfExport.ts                       PDF generation (jsPDF) and CSV export
+  lib/alertConfig.ts                     Configurable alert thresholds and logic
+
+── frontend/lib/data/ (5 JSON files) ──
+  lib/data/facilities.json               Facility metadata (10 hospitals)
+  lib/data/latest-snapshot.json          Latest census snapshot per facility
+  lib/data/trends.json                   Hourly time series per facility
+  lib/data/predictions.json              7-day forecasts per facility
+  lib/data/validation.json               Multi-window backtesting results
+
+
+================================================================================
+4.  DATA PIPELINE — RAW EXCEL → DASHBOARD
+================================================================================
+
+Source: data/HCA Census Metrics.xlsx
+  • 10 HCA hospitals
+  • Hourly readings from January 1, 2026 to February 6, 2026
+  • Metrics: total_census, icu_occupancy, admissions, discharges, births
+
+Processing (Python scripts, run offline):
+
+  Step 1: INGESTION
+    • openpyxl reads every row from the Excel workbook
+    • Each row has: facility, timestamp, metric, value
+    • Timestamps normalized to ISO 8601 UTC
+
+  Step 2: FACILITY EXTRACTION → facilities.json
+    • Unique facility IDs, names, total bed counts, ICU bed counts
+    • Result: array of 10 facility objects
+
+  Step 3: SNAPSHOT EXTRACTION → latest-snapshot.json
+    • For each facility, the most recent observation of each metric
+    • Keyed by facility ID
+
+  Step 4: TREND AGGREGATION → trends.json
+    • Full time series per facility per metric
+    • Array of {time, value} objects sorted chronologically
+
+  Step 5: PREDICTION GENERATION → predictions.json
+    • Transparent statistical model applied per facility:
+      ─ 24-hour Exponential Moving Average (EMA) for current baseline
+      ─ 72-hour OLS linear regression for trend direction
+      ─ Day-of-week × hour-of-day seasonal pattern
+      ─ Confidence bands widening with forecast horizon
+    • 7-day (168-hour) forecast generated
+    • Output: predicted values, upper/lower bounds, driver contributions
+
+  Step 6: VALIDATION GENERATION → validation.json
+    • Multi-window backtesting:
+      Window 1: Train Jan 1–20 → predict Jan 21–27
+      Window 2: Train Jan 1–25 → predict Jan 26–Feb 1
+      Window 3: Train Jan 1–30 → predict Jan 31–Feb 6
+    • Per-window metrics: MAE, RMSE, MAPE, Bias, Coverage
+    • Cross-window averages and trust level derivation
+    • Risk classification based on forecast peak vs capacity
+
+  Data Quality Handling:
+    • Missing values: forward-filled from previous observation
+    • Duplicates: last value kept, earlier duplicates discarded
+    • Anomalies: values outside 3 standard deviations flagged
+    • Out-of-range: negative values and values > 2× capacity capped
+
+
+================================================================================
+5.  FRONTEND ARCHITECTURE
+================================================================================
+
+Framework: Next.js 14 App Router
+
+Route structure:
+  /                  → Dashboard (app/page.tsx)
+  /validation        → Validation page (app/validation/page.tsx)
+
+Root layout (app/layout.tsx):
+  • Loads JetBrains Mono font as CSS variable
+  • Wraps all routes in <RoleProvider> for RBAC
+  • Renders <AdminPanel> globally (slide-in role management)
+  • Sets HTML metadata (title, description)
+
+State management:
+  • React Context for roles (RoleProvider)
+  • localStorage for persistence (roles, alert config)
+  • Component-level useState for UI state
+  • useMemo for derived data (snapshots, alerts, timeline)
+
+Data flow:
+  Static JSON → lib/data.ts → React components
+  No API calls — all data is imported at build time
+
+
+================================================================================
+6.  PAGE-BY-PAGE BREAKDOWN
+================================================================================
+
+── DASHBOARD (app/page.tsx) ──
+
+State:
+  • selectedFacilityId — which hospital (null = system-wide)
+  • startDate / endDate — date range for timeline
+  • showExport / showShare / showAlertSettings — modal toggles
+  • alertConfig — threshold configuration (persisted)
+  • dismissedToasts — set of dismissed popup alert IDs
+
+Data computed via useMemo:
+  • facilities — filtered by role's allowed facility IDs
+  • selectedFacility — current facility object
+  • totalBeds, census, icuMax, icuOccupied, admissions, discharges, births
+  • timelineData — unified historical + forecast timeline
+  • predictions — 7-day forecast for selected facility
+  • allConfiguredAlerts — alerts generated from custom thresholds
+  • alerts — filtered by facility and role
+  • toastAlerts — popup alerts (unsuppressed, undismissed)
+  • exportPayload — full snapshot for PDF/CSV export
+  • occupancyPct, icuPct — derived percentages
+
+Layout:
+  Header:
+    • HCA logo and title
+    • Status pills (Overall %, ICU %, Alert count)
+    • Navigation (Dashboard active, Validation link)
+    • Export button (blue)
+    • Share button (green)
+    • Role switcher dropdown
+
+  Main content:
+    Row 1: Facility selector + Date range filter + Gauges (conditional)
+      • CapacityGauge — semi-circle overall occupancy
+      • ICURiskIndicator — semi-circle ICU risk
+      • CapacityOverview — 6-stat grid
+
+    Row 2: Unified Timeline + Alert Panel (conditional)
+      • UnifiedTimeline — historical + forecast on one chart
+      • AlertPanel — expandable alert list with settings gear
+
+  Modals (portalled to document.body):
+    • ExportModal — section picker + PDF/CSV export
+    • ShareModal — @hca.org sharing simulation
+    • AlertSettingsPanel — threshold configuration
+    • AlertToast — popup notifications (bottom-right)
+
+  Access control:
+    • If role cannot view dashboard → shows restricted message
+    • Individual components hidden based on role's dashboardComponents
+
+
+── VALIDATION (app/validation/page.tsx) ──
+
+State:
+  • selectedFacilityId — which hospital
+  • Uses useRoles() for canViewPage and canViewValidation
+
+Data:
+  • allValidations — all facility validation results
+  • validation — selected facility's validation data
+  • Trust summary — counts of HIGH/MODERATE/LOW across facilities
+  • System average MAPE
+
+Layout:
+  Header:
+    • Navigation (Dashboard link, Validation active)
+    • Trust summary badges (HIGH count, MODERATE count, LOW count)
+    • System avg MAPE
+
+  Explainer section:
+    • How predictions work
+    • What metrics mean
+    • How trust levels are assigned
+
+  Content (conditional on role):
+    • RiskClassification — table of facilities by risk tier
+    • AccuracyMetrics — MAE, RMSE, MAPE, Bias, Coverage with window selector
+    • PredictedVsActual — two charts (census + ICU) with window tabs
+    • DriverBreakdown — pie chart of EMA/trend/seasonal contributions
+
+
+================================================================================
+7.  EVERY COMPONENT — DETAILED
+================================================================================
+
+── AlertPanel.tsx ──
+  What: Scrollable list of capacity alerts with severity badges
+  Props: alerts (AlertWithReason[]), onOpenSettings (optional callback)
+  Features:
+    • Severity badges: critical (red), warning (amber), info (blue)
+    • Forecast badge for prediction-based alerts
+    • Trust level badges (HIGH/MODERATE/LOW confidence)
+    • Click to expand → shows "Why this alert was triggered"
+    • Expanded view shows threshold vs actual comparison
+    • Suppressed alerts counted and shown as summary note
+    • Settings gear button in header opens configuration
+    • Pulse animation on critical dot
+
+── AlertToast.tsx ──
+  What: Slide-in popup notifications at bottom-right of viewport
+  Props: alerts (AlertWithReason[]), onDismiss (callback)
+  Features:
+    • Portalled to document.body (z-index 10000)
+    • Severity-colored backgrounds and borders
+    • Slide-in animation (translateX) on mount
+    • Auto-dismiss after 8 seconds with fade-out
+    • Manual dismiss via X button
+    • Shows facility name, message, and trigger reason
+    • Forecast badge for prediction alerts
+    • Critical alerts have pulse animation on dot
+
+── AlertSettingsPanel.tsx ──
+  What: Full-screen modal for configuring alert behavior
+  Props: config (AlertConfig), onSave, onClose
+  Features:
+    • Three threshold sections (Capacity, ICU, Forecast Risk)
+    • Each has warning + critical range sliders (50–100%)
+    • Visual range bar showing Normal/Warning/Critical zones
+    • Validation: warning must be lower than critical
+    • Notification style toggles (Dashboard, Popup Toast, Email sim.)
+    • Email recipient input when email is enabled
+    • Max alerts per facility (1–10, +/− buttons)
+    • Toggle: suppress low-priority duplicates
+    • "How alerts are triggered" explanation box
+    • Save + Reset buttons with success feedback
+    • Persisted to localStorage
+
+── ExportModal.tsx ──
+  What: Configuration panel for generating PDF/CSV executive briefs
+  Props: payload (ExportPayload), onClose
+  Features:
+    • Mini KPI preview bar (facility, occupancy, ICU, role)
+    • 6 toggleable report sections in a 2-column grid:
+      ─ Key Metrics
+      ─ ICU Information
+      ─ Alerts Summary
+      ─ Forecast Chart
+      ─ Trend Charts
+      ─ Validation Metrics
+    • All/None quick-select buttons
+    • PDF button (gradient blue, generates professional light-theme PDF)
+    • CSV button (data export with selected sections)
+    • Disabled state when no sections selected
+    • Success feedback after download
+
+── ShareModal.tsx ──
+  What: Enterprise-style secure sharing simulation
+  Props: payload (ExportPayload), onClose
+  Features:
+    • View snapshot summary (role, facility, date range, components)
+    • Generated secure link (base64-encoded token)
+    • Copy button with clipboard feedback
+    • Email input restricted to @hca.org domain
+    • Error display for invalid email domains
+    • Optional note field
+    • Security notice (24-hour expiry, @hca.org only)
+    • "Send Secure Link" button with loading state
+    • Success screen with simulated email preview:
+      ─ From/To/Subject headers
+      ─ Body with role, facility, expiry notice
+      ─ Share link
+    • Three-step flow: compose → sending → sent
+
+── UnifiedTimeline.tsx ──
+  What: Combined historical and forecast chart on single timeline
+  Props: data (UnifiedTimelinePoint[]), totalBeds, icuMax, currentDate,
+         showAdmDischarge (optional)
+  Features:
+    • Historical census (green solid line)
+    • Historical ICU (amber solid line)
+    • Forecast census (purple dashed line)
+    • Forecast ICU (orange dashed line)
+    • Confidence band (light purple area between upper/lower)
+    • Optional admissions (green bars) and discharges (red bars)
+    • Dual Y-axis when admissions/discharges shown
+    • Capacity reference line
+    • 90% threshold reference line
+    • "Today" vertical reference line
+    • Custom legend (Historical / Forecast / Confidence)
+    • Built with Recharts ComposedChart
+
+── DateRangeFilter.tsx ──
+  What: Date range picker with quick presets
+  Props: startDate, endDate, onStartChange, onEndChange,
+         dataStart, dataEnd, currentDate
+  Features:
+    • Preset buttons: Last 7d, Last 14d, Last 30d, All history, All + forecast
+    • Custom From/To date inputs with min/max bounds
+    • Status indicator: "Includes forecast" or "Historical only"
+
+── RoleSwitcher.tsx ──
+  What: Dropdown button to switch between active roles
+  Props: none (uses useRoles() context)
+  Features:
+    • Shows current role name
+    • Click opens dropdown (portalled to document.body)
+    • Lists all roles with active highlight
+    • "Built-in" badge for default roles
+    • "Manage roles (Admin)" link opens AdminPanel
+    • Click-outside to close
+    • SSR-safe via mounted state
+
+── AdminPanel.tsx ──
+  What: Slide-in right panel for creating and managing roles
+  Props: none (uses useRoles() context)
+  Features:
+    • List view: all roles, active highlight, create/edit/delete
+    • Edit form:
+      ─ Role name input
+      ─ Page access toggles (Dashboard, Validation)
+      ─ Dashboard component toggles (6 options)
+      ─ Validation component toggles (4 options)
+      ─ Facility access (all or specific hospitals)
+    • Built-in roles cannot be deleted
+    • ToggleChip component for multi-select
+    • Backdrop click to close
+
+── CapacityGauge.tsx ──
+  What: Semi-circle radial gauge for overall occupancy
+  Props: census, capacity, label (optional)
+  Features:
+    • Recharts PieChart rendered as 180° gauge
+    • Color zones: green (<75%), amber (75–89%), red (≥90%)
+    • Status label: NORMAL / ELEVATED / CRITICAL
+    • Stats grid: Census, Capacity, Available
+    • Large percentage display in center
+
+── ICURiskIndicator.tsx ──
+  What: Semi-circle gauge for ICU occupancy risk
+  Props: occupied, total, trendDirection (optional), predictedPeak (optional)
+  Features:
+    • 4 risk zones: LOW, MODERATE, ELEVATED, CRITICAL
+    • Needle-style gauge via Recharts PieChart
+    • Stats: Occupied, Available, Trend direction arrow
+    • Optional 7-day forecast peak display
+
+── CapacityOverview.tsx ──
+  What: Compact 6-stat grid of capacity metrics
+  Props: totalBeds, census, icuMax, icuOccupied, admissions,
+         discharges, births
+  Features:
+    • Total beds, Census, Occupancy %, ICU (occupied/max),
+      Net flow (admissions + births − discharges), Births
+    • Color-coded percentages by threshold
+
+── HospitalSelector.tsx ──
+  What: Facility dropdown selector
+  Props: facilities (Facility[]), selectedId, onSelect
+  Features:
+    • "System-wide (all facilities)" default option
+    • Each option shows facility name and bed count
+    • Connected facilities count
+
+── RiskClassification.tsx ──
+  What: Table of facilities ranked by forecast risk tier
+  Props: validations (Record<string, FacilityValidation>)
+  Features:
+    • Columns: Facility, Risk tier, Forecast trust, Peak forecast,
+      Capacity, Peak %, Avg MAPE, Avg Coverage
+    • Tiers: CRITICAL (red), HIGH (orange), MODERATE (amber), LOW (green)
+    • Trust badges: HIGH/MODERATE/LOW
+    • Sorted by tier severity
+
+── PredictedVsActual.tsx ──
+  What: Chart comparing backtest predictions to actual values
+  Props: windows (WindowValidation[]), metricKey, metricLabel,
+         capacity (optional)
+  Features:
+    • Tab buttons to select backtest window
+    • Actual values (green solid line)
+    • Predicted values (purple dashed line)
+    • Confidence band (area between upper/lower)
+    • Optional capacity reference line
+    • Recharts ComposedChart
+
+── AccuracyMetrics.tsx ──
+  What: Validation accuracy metrics display with window selector
+  Props: windows (WindowValidation[]), summary (total_census, icu_occupancy)
+  Features:
+    • Tabs: "Cross-window avg" and individual windows
+    • Summary view: trust badges + averaged metrics
+    • Per-window view: specific period metrics
+    • Metric cards: MAE, RMSE, MAPE, Bias, Coverage, Points
+    • Grade from MAPE: Excellent (≤3%), Good (≤7%), Fair (≤15%), Poor (>15%)
+    • Train/test period display
+
+── DriverBreakdown.tsx ──
+  What: Pie chart showing prediction driver contributions
+  Props: ema, trend, seasonal (DriverContribution), metricLabel
+  Features:
+    • Donut chart: EMA (blue), Trend (purple), Seasonal (green)
+    • Horizontal percentage bars with labels
+    • Driver descriptions:
+      ─ EMA: "24-hour exponential moving average — recent baseline"
+      ─ Trend: "72-hour OLS regression — directional momentum"
+      ─ Seasonal: "Day-of-week × hour-of-day recurring pattern"
+
+── Legacy components (still in codebase, replaced by newer versions) ──
+  TrendChart.tsx        → replaced by UnifiedTimeline
+  ForecastChart.tsx     → replaced by UnifiedTimeline
+  FlowTrendChart.tsx    → replaced by UnifiedTimeline
+  PredictionPanel.tsx   → replaced by dashboard inline display
+  TotalCensus.tsx       → replaced by CapacityGauge
+  ICUOccupancy.tsx      → replaced by ICURiskIndicator
+
+
+================================================================================
+8.  EVERY LIBRARY MODULE — DETAILED
+================================================================================
+
+── lib/types.ts ──
+  All shared TypeScript interfaces:
+
+  Facility            { id, name, beds, icuMax }
+  FacilitySnapshot    { facilityId, total_census, icu_occupancy, admissions,
+                        births, discharges, with timestamps }
+  TrendPoint          { time, value }
+  FacilityTrends      { total_census[], icu_occupancy[], admissions[],
+                        births[], discharges[] }
+  TrustLevel          "HIGH" | "MODERATE" | "LOW"
+  Alert               { id, facilityId, facilityName, severity, message,
+                        at, trust? }
+  ForecastPoint       { time, predicted, upper, lower }
+  PredictionDriver    { name, value, description, direction? }
+  MetricPrediction    { lastObserved, capacity, currentPct, peakPredicted,
+                        peakPct, trendDirection, trendSlope, forecast[],
+                        drivers[], model }
+  FacilityPredictions { total_census?, icu_occupancy? }
+  ValidationMetrics   { mae, rmse, mape, bias, coverage, n_points }
+  DriverContribution  { avg_abs_contribution, percent }
+  RiskClassification  { tier, peakPct, capacity, peakPredicted }
+  BacktestPoint       { time, predicted, actual, upper, lower,
+                        ema_component, trend_component, seasonal_component,
+                        error, abs_error }
+  MetricValidation    { metrics, drivers, risk, backtest[], trainPeriod,
+                        testPeriod }
+  WindowValidation    { id, label, total_census?, icu_occupancy? }
+  MetricSummary       { avgMetrics, drivers, trust, risk }
+  FacilityValidation  { facilityName, windows[], summary, total_census?,
+                        icu_occupancy? }
+  DashboardComponent  "capacityGauge" | "icuRisk" | "capacityOverview" |
+                      "flowTrend" | "forecast" | "alerts"
+  ValidationComponent "riskClassification" | "accuracyMetrics" |
+                      "predictedVsActual" | "driverBreakdown"
+  PageAccess          "dashboard" | "validation"
+  Role                { id, name, facilityAccess, pages[],
+                        dashboardComponents[], validationComponents[],
+                        isBuiltIn? }
+
+── lib/data.ts ──
+  Data access layer that imports all 5 JSON files and exports:
+
+  Constants:
+    CURRENT_DATE  = "2026-02-06"  (last observed data point)
+    DATA_START    = "2026-01-01"  (first data point)
+    DATA_END      = "2026-02-13"  (last forecast point)
+
+  Functions:
+    getSnapshot(facilityId)       → FacilitySnapshot | null
+    getAllSnapshots()              → FacilitySnapshot[]
+    getTrends(facilityId)         → FacilityTrends | null
+    getPredictions(facilityId)    → FacilityPredictions | null
+    getValidation(facilityId)     → FacilityValidation | null
+    getAllValidations()            → Record<string, FacilityValidation>
+    getTrust(facilityId, metric)  → TrustLevel
+    getUnifiedTimeline(ids, start, end) → UnifiedTimelinePoint[]
+    generateAlerts()               → Alert[]  (uses hardcoded thresholds)
+
+  Types:
+    UnifiedTimelinePoint { time, census?, icu?, admissions?, discharges?,
+                           forecastCensus?, forecastIcu?, upper?, lower? }
+
+── lib/roles.tsx ──
+  RBAC context provider:
+
+  Built-in roles:
+    Administrator   — all pages, all components, all facilities
+    Chief Nursing Officer — dashboard only, capacity + ICU + overview + alerts
+    CFO             — dashboard only, capacity + overview + flow trend
+    Data Analyst    — all pages, flow + forecast + alerts + all validation
+
+  Functions:
+    useRoles()     → context with roles, activeRole, setActiveRoleId,
+                     addRole, updateRole, deleteRole, canViewPage,
+                     canViewDashboard, canViewValidation,
+                     allowedFacilityIds, adminPanelOpen, setAdminPanelOpen
+    RoleProvider   → wraps children with role context
+
+  Persistence: localStorage keys "hcc-roles" and "hcc-active-role"
+
+── lib/report.ts ──
+  Export/share types and helpers:
+
+  Types:
+    AlertSummary     { critical, warning, info, forecastAlerts, items }
+    ForecastSummary  { censusPeakPct, icuPeakPct, censusTrend,
+                       icuTrend, trustLevel }
+    ReportSection    "keyMetrics" | "icuInfo" | "alerts" |
+                     "forecastChart" | "trendCharts" | "validationMetrics"
+    ExportPayload    (full snapshot: role, facility, dates, metrics,
+                      alerts, forecast, timeline, validation)
+
+  Constants:
+    REPORT_SECTIONS  — array of { key, label, description } for 6 sections
+
+  Functions:
+    buildAlertSummary(alerts)  → AlertSummary
+    buildShareToken(payload)   → base64 string (32 chars)
+    buildShareUrl(token)       → full URL
+
+── lib/pdfExport.ts ──
+  PDF and CSV generation:
+
+  exportToPDF(payload, sections):
+    • Light-background professional A4 PDF
+    • HCA-blue header strip with logo, title, role, date
+    • Context row (facility, date range, role, sections)
+    • Sections rendered only if selected:
+      ─ Key Metrics: 6 cards with color-coded risk bars
+      ─ ICU Information: 6 ICU cards + risk banner
+      ─ Alerts: severity badge counts + row-striped table
+      ─ Forecast: peak/trend/trust cards + data table
+      ─ Trends: min/max/avg/latest stats + range visualization bars
+      ─ Validation: trust/risk badges, accuracy table, driver bars,
+        backtest windows
+    • Page footers with page numbers and confidentiality
+    • Automatic page breaks
+
+  exportToCSV(payload, sections):
+    • Structured CSV with selected sections
+    • Headers, capacity snapshot, alerts table, timeline data
+
+── lib/alertConfig.ts ──
+  Configurable alert system:
+
+  Types:
+    NotificationStyle  "dashboard" | "popup" | "email"
+    ThresholdPair      { warning, critical }
+    AlertConfig        { capacity, icu, forecastRisk thresholds;
+                         notifications[]; maxAlertsPerFacility;
+                         suppressInfoWhenWarning; emailRecipient }
+    AlertWithReason    extends Alert + { reason, threshold, actual,
+                        suppressed? }
+
+  Constants:
+    DEFAULT_CONFIG — capacity 80/90, ICU 75/85, forecast 80/90,
+                     dashboard only, max 4 per facility, suppress info
+
+  Functions:
+    loadAlertConfig()              → AlertConfig (from localStorage)
+    saveAlertConfig(config)        → saves to localStorage
+    generateConfiguredAlerts(cfg)  → AlertWithReason[]
+
+  Alert generation logic:
+    1. For each facility, compute occupancy % and ICU %
+    2. Compare against config thresholds
+    3. Generate alerts with human-readable reason strings
+    4. Add forecast-based alerts with trust-level confidence tags
+    5. Sort by severity (critical first)
+    6. Suppress info alerts when higher-severity exists for same category
+    7. Cap alerts per facility to prevent flooding
+
+
+================================================================================
+9.  DATA FILES (JSON) — STRUCTURE
+================================================================================
+
+── facilities.json ──
+  Array of 10 objects:
+    { "id": "fac_001", "name": "HCA Savannah GA", "beds": 450, "icuMax": 52 }
+
+── latest-snapshot.json ──
+  Object keyed by facility ID:
+    { "fac_001": {
+        "facilityId": "fac_001",
+        "total_census": 387,
+        "total_census_at": "2026-02-06T23:00:00",
+        "icu_occupancy": 44,
+        "icu_occupancy_at": "2026-02-06T23:00:00",
+        "admissions": 18,
+        "admissions_at": "2026-02-06T23:00:00",
+        "births": 3,
+        "births_at": "2026-02-06T23:00:00",
+        "discharges": 15,
+        "discharges_at": "2026-02-06T23:00:00"
+    }}
+
+── trends.json ──
+  Object keyed by facility ID:
+    { "fac_001": {
+        "total_census": [ { "time": "2026-01-01T00:00:00", "value": 350 }, ... ],
+        "icu_occupancy": [ ... ],
+        "admissions": [ ... ],
+        "births": [ ... ],
+        "discharges": [ ... ]
+    }}
+  Each metric contains hourly data points for Jan 1 – Feb 6, 2026.
+
+── predictions.json ──
+  Object keyed by facility ID:
+    { "fac_001": {
+        "total_census": {
+          "lastObserved": 387, "lastObservedAt": "2026-02-06T23:00:00",
+          "capacity": 450, "currentPct": 86, "peakPredicted": 412,
+          "peakPct": 92, "trendDirection": "rising", "trendSlope": 0.35,
+          "forecast": [ { "time": "...", "predicted": 390, "upper": 405, "lower": 375 }, ... ],
+          "drivers": [ { "name": "EMA", "value": 0.62, "description": "..." }, ... ],
+          "model": "EMA + Linear Trend + Seasonal"
+        },
+        "icu_occupancy": { ... }
+    }}
+
+── validation.json ──
+  Object keyed by facility ID:
+    { "fac_001": {
+        "facilityName": "HCA Savannah GA",
+        "windows": [
+          { "id": "w1", "label": "Jan 1–20 → Jan 21–27",
+            "total_census": {
+              "metrics": { "mae": 8.2, "rmse": 10.1, "mape": 2.3, "bias": -1.1, "coverage": 95, "n_points": 168 },
+              "drivers": { "ema": { "avg_abs_contribution": 350, "percent": 62 }, "trend": {...}, "seasonal": {...} },
+              "risk": { "tier": "MODERATE", "peakPct": 88, "capacity": 450, "peakPredicted": 396 },
+              "backtest": [ { "time": "...", "predicted": 380, "actual": 375, "upper": 395, "lower": 365, ... }, ... ],
+              "trainPeriod": { "start": "2026-01-01", "end": "2026-01-20" },
+              "testPeriod": { "start": "2026-01-21", "end": "2026-01-27" }
+            }
+          }, ...
+        ],
+        "summary": {
+          "total_census": {
+            "avgMetrics": { "mae": 9.1, "rmse": 11.3, "mape": 2.8, ... },
+            "drivers": { ... },
+            "trust": "HIGH",
+            "risk": { "tier": "MODERATE", ... }
+          }
+        }
+    }}
+
+
+================================================================================
+10. PREDICTION MODEL
+================================================================================
+
+Name: Transparent Statistical Forecast
+Type: Additive decomposition (no black-box ML)
+
+Components:
+  1. 24-hour Exponential Moving Average (EMA)
+     • Weights recent observations more heavily
+     • Provides the current baseline level
+     • Typically contributes ~55–65% of the forecast
+
+  2. 72-hour Ordinary Least Squares (OLS) Linear Trend
+     • Fits a line through the last 72 hours of data
+     • Captures directional momentum (rising/falling/stable)
+     • Applies exponential damping to prevent runaway extrapolation
+     • Typically contributes ~15–25% of the forecast
+
+  3. Day-of-Week × Hour-of-Day Seasonal Pattern
+     • Calculates average deviations for each combination
+     • Captures recurring rhythms (e.g., higher admissions on weekdays)
+     • Typically contributes ~15–25% of the forecast
+
+Forecast formula:
+  predicted(t) = EMA_baseline + damped_trend(t) + seasonal_adjustment(t)
+
+Confidence bands:
+  • Width increases with forecast horizon
+  • Based on historical prediction error standard deviation
+  • Upper = predicted + z * σ * sqrt(hours_ahead)
+  • Lower = predicted - z * σ * sqrt(hours_ahead)
+
+Forecast horizon: 7 days (168 hours)
+Applied separately to: total_census, icu_occupancy
+
+
+================================================================================
+11. MODEL VALIDATION & BACKTESTING
+================================================================================
+
+Approach: Multi-window walk-forward backtesting
+
+Windows:
+  Window 1: Train Jan 1–20 → Predict Jan 21–27
+  Window 2: Train Jan 1–25 → Predict Jan 26–Feb 1
+  Window 3: Train Jan 1–30 → Predict Jan 31–Feb 6
+
+Per-window metrics:
+  • MAE  — Mean Absolute Error
+  • RMSE — Root Mean Squared Error
+  • MAPE — Mean Absolute Percentage Error
+  • Bias — Average signed error (under/over-prediction)
+  • Coverage — % of actuals falling within confidence bands
+
+Cross-window summary:
+  • Average of all per-window metrics
+  • Driver contribution averages
+
+Trust level derivation:
+  • HIGH     — average MAPE ≤ 5%
+  • MODERATE — average MAPE ≤ 12%
+  • LOW      — average MAPE > 12%
+
+Risk classification:
+  • CRITICAL — forecast peak ≥ 95% of capacity
+  • HIGH     — forecast peak ≥ 90% of capacity
+  • MODERATE — forecast peak ≥ 80% of capacity
+  • LOW      — forecast peak < 80% of capacity
+
+
+================================================================================
+12. ROLE-BASED ACCESS CONTROL (RBAC)
+================================================================================
+
+Implementation: Client-side React Context + localStorage
+Authentication: Simulated (no real auth — prototype)
+
+Built-in roles:
+  ┌─────────────────────┬───────────┬───────────────────────────┬───────────────┐
+  │ Role                │ Pages     │ Dashboard Components      │ Validation    │
+  ├─────────────────────┼───────────┼───────────────────────────┼───────────────┤
+  │ Administrator       │ All       │ All 6                     │ All 4         │
+  │ Chief Nursing Off.  │ Dashboard │ Gauge, ICU, Overview,     │ None          │
+  │                     │           │ Alerts                    │               │
+  │ CFO                 │ Dashboard │ Gauge, Overview, Flow     │ None          │
+  │ Data Analyst        │ All       │ Flow, Forecast, Alerts    │ All 4         │
+  └─────────────────────┴───────────┴───────────────────────────┴───────────────┘
+
+Custom roles:
+  • Created via Admin Panel
+  • Configurable name, page access, component visibility, facility access
+  • Saved to localStorage, persist across sessions
+  • Can be edited and deleted (built-ins cannot be deleted)
+
+Access control points:
+  • Page-level: canViewPage("dashboard") / canViewPage("validation")
+  • Component-level: canViewDashboard("capacityGauge"), etc.
+  • Facility-level: allowedFacilityIds ("all" or specific IDs)
+  • HospitalSelector filters its options by allowed facilities
+
+
+================================================================================
+13. ALERT SYSTEM (CONFIGURABLE)
+================================================================================
+
+Architecture:
+  lib/alertConfig.ts    — types, defaults, generation logic
+  AlertPanel.tsx        — dashboard alert list
+  AlertToast.tsx        — popup notifications
+  AlertSettingsPanel.tsx — configuration modal
+
+Default thresholds:
+  Overall occupancy: warning 80%, critical 90%
+  ICU occupancy:     warning 75%, critical 85%
+  Forecast risk:     warning 80%, critical 90%
+
+Alert types:
+  1. Current state alerts — triggered by latest snapshot exceeding threshold
+  2. Forecast alerts — triggered when 7-day peak forecast exceeds threshold
+     (only when current value is still below threshold)
+
+Each alert includes:
+  • Severity: critical / warning / info
+  • Facility name and ID
+  • Human-readable message
+  • Timestamp
+  • Trust level (for forecast alerts)
+  • Reason string explaining exactly why it was triggered
+  • Threshold value and actual value
+
+Notification styles (configurable):
+  • Dashboard — alerts shown in AlertPanel
+  • Popup Toast — slide-in notifications at bottom-right
+  • Email (simulated) — requires @hca.org email recipient
+
+Prioritization:
+  • Sorted by severity (critical first)
+  • Info alerts suppressed when warning/critical exists for same category
+  • Per-facility cap (default: 4) prevents one facility from dominating
+  • Suppressed alerts counted and shown as summary
+
+Persistence: localStorage key "hcc-alert-config"
+
+
+================================================================================
+14. EXPORT FEATURE (PDF + CSV)
+================================================================================
+
+Entry point: Export button in dashboard header → ExportModal
+
+Configuration panel:
+  • 6 toggleable report sections:
+    1. Key Metrics — occupancy, census, admissions, discharges, births
+    2. ICU Information — ICU beds, risk level, forecast peak
+    3. Alerts Summary — current and forecast-based alerts
+    4. Forecast Chart — 7-day predicted values, trust level
+    5. Trend Charts — historical min/max/avg summary
+    6. Validation Metrics — MAE, RMSE, MAPE, trust, backtest windows
+  • All/None quick select
+  • PDF and CSV export buttons
+
+PDF output (via jsPDF):
+  • Light white background designed for printing
+  • HCA blue header (#00529B) with logo, title, role, date
+  • Context row: facility, date range, role, section count
+  • Each section rendered only if selected:
+    ─ Metric cards with color-coded top borders
+    ─ Risk banners (NORMAL/ELEVATED/CRITICAL)
+    ─ Alert table with severity colors
+    ─ Forecast data point table
+    ─ Historical stats table with range visualization bars
+    ─ Validation accuracy table with MAPE color coding
+    ─ Driver contribution progress bars
+    ─ Backtest windows table
+  • Page footers with page numbers, confidentiality notice
+  • Automatic page breaks
+
+CSV output:
+  • Structured sections based on selection
+  • Full timeline data for analysis
+  • Alert table with severity and type
+
+
+================================================================================
+15. SECURE SHARE SIMULATION
+================================================================================
+
+Entry point: Share button in dashboard header → ShareModal
+
+Flow:
+  1. Compose — enter email, optional note
+  2. Sending — 1.4s simulated delay
+  3. Sent — confirmation with email preview
+
+Features:
+  • View snapshot summary (role, facility, date range, components)
+  • Base64-encoded share link (encodes role, facility, dates, components)
+  • Copy link to clipboard
+  • Email validation: only @hca.org addresses accepted
+  • Error display for invalid domain
+  • Domain restriction notice with lock icon
+  • Simulated email preview showing:
+    ─ From: noreply@hca-command-center.hca.org
+    ─ To: entered email
+    ─ Subject with role and facility
+    ─ Body with access notice, note, and share link
+    ─ 24-hour expiry notice
+
+
+================================================================================
+16. UNIFIED TIMELINE
+================================================================================
+
+Component: UnifiedTimeline.tsx
+Replaces: FlowTrendChart + ForecastChart (two separate charts)
+
+What it does:
+  • Single Recharts ComposedChart spanning the full date range
+  • Historical data (solid lines) transitions seamlessly to forecast (dashed)
+  • Vertical "Today" marker at CURRENT_DATE
+  • Census line (green) + ICU line (amber) for history
+  • Census forecast (purple dashed) + ICU forecast (orange dashed)
+  • Confidence band (translucent purple area)
+  • Optional admissions/discharges bars on secondary Y-axis
+  • Capacity and 90% threshold reference lines
+
+
+================================================================================
+17. DATE RANGE FILTERING
+================================================================================
+
+Component: DateRangeFilter.tsx
+
+Presets:
+  • Last 7 days
+  • Last 14 days (default)
+  • Last 30 days
+  • All history
+  • All + forecast
+
+Custom:
+  • From/To date inputs bounded by data range
+  • Status indicator shows whether forecast is included
+
+Data flow:
+  • startDate/endDate state in page.tsx
+  • Passed to getUnifiedTimeline() which filters data points
+  • Timeline chart renders only data within the selected range
+
+
+================================================================================
+18. STYLING & THEME
+================================================================================
+
+CSS framework: Tailwind CSS 3.4
+
+Custom theme (tailwind.config.ts):
+  Colors:
+    bunker-950: #0d1117  (darkest background)
+    bunker-900: #161b22  (panels)
+    bunker-800: #21262d  (interactive elements)
+    bunker-700: #30363d  (borders)
+    bunker-600: #484f58  (disabled text)
+    signal-green:  #3fb950
+    signal-amber:  #d29922
+    signal-red:    #f85149
+    signal-blue:   #58a6ff
+
+  Fonts:
+    sans: system-ui (body text)
+    display: JetBrains Mono (numeric values)
+
+  Shadows:
+    panel: 0 1px 3px rgba(0,0,0,0.3)
+    glow: 0 0 15px rgba(63,185,80,0.08)
+
+Global CSS classes (globals.css):
+  .panel           — bordered card with background and shadow
+  .panel-header    — section header inside a panel
+  .data-value      — monospace number display
+  .badge-critical  — red severity badge
+  .badge-warning   — amber severity badge
+  .badge-info      — blue severity badge
+  .pulse-critical  — pulsing red dot animation
+
+Many modal/portal components use inline styles (not Tailwind) to ensure
+visibility regardless of CSS purging — this was a deliberate fix for
+dropdown visibility issues encountered during development.
+
+
+================================================================================
+19. CONFIGURATION & BUILD
+================================================================================
+
+package.json scripts:
+  dev   — next dev (development server on localhost:3000)
+  build — next build (production build)
+  start — next start (production server)
+  lint  — next lint
+
+Dependencies:
+  next       ^14.2.0
+  react      ^18.2.0
+  react-dom  ^18.2.0
+  recharts   ^2.12.0
+  jspdf      ^4.2.0
+
+Dev dependencies:
+  typescript    ^5.0.0
+  tailwindcss   ^3.4.0
+  postcss       ^8.4.0
+  autoprefixer  ^10.4.0
+  @types/node   ^20.0.0
+  @types/react  ^18.2.0
+  @types/react-dom ^18.2.0
+
+TypeScript config:
+  • Strict mode
+  • @/* path alias for imports
+  • JSX: preserve
+
+Next.js config:
+  • Minimal (empty config)
+  • App Router (not Pages Router)
+
+
+================================================================================
+20. DOCUMENTATION FILES
+================================================================================
+
+README/README.md:
+  • Project overview and elevator pitch
+  • Feature list with descriptions
+  • Tech stack summary
+  • Data description
+  • Role model
+  • Model validation approach
+  • AI usage disclosure
+  • Links to ARCHITECTURE.md and DATA_INTEGRITY.txt
+
+README/ARCHITECTURE.md:
+  • Folder structure diagram
+  • High-level data flow
+  • Feature-to-file mapping
+  • Proposed API surface
+  • Conventions and guidelines
+
+README/DATA_INTEGRITY.txt:
+  • Dataset ingestion process (Excel → JSON)
+  • Preprocessing steps (aggregation, cleaning, validation)
+  • Missing/duplicate/anomalous value handling
+  • Deterministic calculations and reproducibility
+  • Transformation chains from raw data to dashboard metrics
+
+README/Hospital_Command_Center_Summary.pdf:
+  • Generated via reportlab
+  • Comprehensive project summary
+
+.cursor/rules/project-standards.mdc:
+  • Coding standards for AI assistance
+  • HCA hackathon-specific rules
+  • UI design principles
+  • Rubric-based development guidance
+
+
+================================================================================
+21. WHAT IS NOT BUILT (KNOWN GAPS)
+================================================================================
+
+  • No live backend API — all data is static JSON
+  • No real database (SQLite or otherwise)
+  • No real authentication or authorization
+  • No real email sending
+  • No WebSocket or real-time updates
+  • No actual share link resolution (links are decorative)
+  • Backend directory is scaffolded but empty
+  • No automated tests
+  • No CI/CD pipeline
+  • No Docker configuration
+  • No mobile-specific optimizations beyond responsive CSS
+  • Legacy components still in codebase (not deleted, just unused)
+  • PDF charts are rendered as data tables (no chart images in PDF)
+  • No data refresh mechanism (data is from Jan 1 – Feb 6, 2026)
+  • No user preferences beyond role and alert config
+  • No audit logging
+  • No accessibility (ARIA) audit performed
+
+
+================================================================================
+  END OF DOCUMENT
+================================================================================

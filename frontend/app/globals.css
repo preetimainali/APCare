@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bunker-950: #0d1117;
+  --bunker-900: #161b22;
+  --bunker-800: #21262d;
+  --signal-green: #3fb950;
+  --signal-amber: #d29922;
+  --signal-red: #f85149;
+  --signal-blue: #58a6ff;
+}
+
+body {
+  @apply bg-bunker-950 text-gray-200 antialiased;
+}
+
+/* Command center panel styling */
+.panel {
+  @apply rounded-lg border border-bunker-700 bg-bunker-900/80 shadow-panel backdrop-blur-sm;
+}
+
+.panel-header {
+  @apply border-b border-bunker-700 px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-gray-400;
+}
+
+/* Data display numbers */
+.data-value {
+  @apply font-display tabular-nums tracking-tight;
+}
+
+/* Severity badges */
+.badge-critical {
+  @apply inline-flex items-center gap-1 rounded-full bg-signal-red/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-signal-red;
+}
+.badge-warning {
+  @apply inline-flex items-center gap-1 rounded-full bg-signal-amber/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-signal-amber;
+}
+.badge-info {
+  @apply inline-flex items-center gap-1 rounded-full bg-signal-blue/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-signal-blue;
+}
+
+/* Pulse animation for critical alerts */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.pulse-critical {
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+/* Touch-device active state feedback */
+@media (hover: none) and (pointer: coarse) {
+  button:active,
+  a:active,
+  [role="button"]:active {
+    opacity: 0.75;
+    transition: opacity 0.05s;
+  }
+}
+
+/* Prevent text size adjustment on orientation change */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Smooth-scroll containers for charts */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Responsive panel header */
+@media (max-width: 639px) {
+  .panel-header {
+    @apply px-3 py-2 text-[10px];
+  }
+}

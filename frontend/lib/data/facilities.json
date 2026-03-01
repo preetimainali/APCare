@@ -1,0 +1,62 @@
+[
+  {
+    "id": "1234",
+    "name": "Savannah, GA",
+    "beds": 381,
+    "icuMax": 43
+  },
+  {
+    "id": "12345",
+    "name": "Denver, CO",
+    "beds": 452,
+    "icuMax": 84
+  },
+  {
+    "id": "23456",
+    "name": "Austin, TX",
+    "beds": 768,
+    "icuMax": 136
+  },
+  {
+    "id": "34567",
+    "name": "Brownsville, TX",
+    "beds": 179,
+    "icuMax": 26
+  },
+  {
+    "id": "45678",
+    "name": "Hopewell, VA",
+    "beds": 132,
+    "icuMax": 15
+  },
+  {
+    "id": "56789",
+    "name": "Orlando, FL",
+    "beds": 458,
+    "icuMax": 70
+  },
+  {
+    "id": "67890",
+    "name": "Tampa, FL",
+    "beds": 664,
+    "icuMax": 66
+  },
+  {
+    "id": "78901",
+    "name": "Salt Lake City, UT",
+    "beds": 468,
+    "icuMax": 74
+  },
+  {
+    "id": "89012",
+    "name": "Myrtle Beach, SC",
+    "beds": 246,
+    "icuMax": 29
+  },
+  {
+    "id": "90123",
+    "name": "Nashville, TN",
+    "beds": 321,
+    "icuMax": 53
+  }
+]

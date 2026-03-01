@@ -1,0 +1,276 @@
+================================================================================
+  HOSPITAL COMMAND CENTER — DATA INTEGRITY & PROCESSING SUMMARY
+  HCA Healthcare Hackathon Prototype
+  Prepared for: Hospital Executive Review
+  Last updated: February 2026
+================================================================================
+
+This document explains exactly how raw hospital census data is ingested,
+cleaned, transformed, and delivered to the dashboard. Every step is fully
+deterministic and reproducible. No black boxes.
+
+────────────────────────────────────────────────────────────────────────────────
+1.  DATASET INGESTION — FROM EXCEL TO JSON
+────────────────────────────────────────────────────────────────────────────────
+
+Source file:
+  HCA Census Metrics.xlsx
+
+Format:
+  A multi-sheet Excel workbook containing hourly census telemetry for 10
+  HCA Healthcare facilities, recorded across January 1 – February 6, 2026.
+  Each row represents a single metric observation at a specific facility and
+  timestamp.
+
+Ingestion tool:
+  Python 3.x with the openpyxl library (no external analytics dependencies).
+  openpyxl reads the workbook without executing any embedded macros, formulas,
+  or VBA code, ensuring the raw byte values are loaded as-is.
+
+Ingestion process:
+  1. The workbook is opened in read-only mode to prevent accidental writes.
+  2. Every row is read into memory as a plain Python dictionary keyed on
+     (facility_id, metric_name, timestamp).
+  3. Timestamps are parsed to ISO 8601 format (e.g., 2026-01-15T14:00:00)
+     using Python's built-in datetime module — no locale-dependent parsing.
+  4. Numeric metric values are cast from Excel cell values to Python floats,
+     then rounded to one decimal place to avoid floating-point representation
+     noise.
+  5. Facility names and metadata (total bed count, ICU capacity) are loaded
+     from a separate static reference table embedded in the script.
+
+Output (written once, served as static files):
+  frontend/lib/data/facilities.json       — facility metadata
+  frontend/lib/data/latest-snapshot.json  — most recent value per metric/facility
+  frontend/lib/data/trends.json           — full hourly time series per metric
+  frontend/lib/data/predictions.json      — 7-day forecasts
+  frontend/lib/data/validation.json       — backtesting accuracy metrics
+
+Why static JSON?
+  For this prototype, pre-computed JSON files are served directly to the
+  frontend. This eliminates network latency, removes backend dependencies
+  during the demo, and makes the data pipeline fully auditable — every output
+  file can be opened and inspected by any reviewer.
+
+────────────────────────────────────────────────────────────────────────────────
+2.  PREPROCESSING STEPS
+────────────────────────────────────────────────────────────────────────────────
+
+Step 1 — Row filtering
+  Rows with no timestamp or an unrecognized facility ID are discarded.
+  A warning is printed to the console for each discarded row so nothing is
+  silently dropped.
+
+Step 2 — Timestamp normalization
+  All timestamps are converted to UTC-naive ISO 8601 strings with 1-hour
+  granularity. Sub-hour records (e.g., 15-minute intervals) are aggregated to
+  their parent hour using the mean value.
+
+Step 3 — Metric normalization
+  Metric names in the source file use inconsistent casing and whitespace
+  (e.g., "Total Census", "total census", "TOTAL_CENSUS"). All variants are
+  mapped to a canonical set:
+    total_census, icu_occupancy, admissions, discharges, births
+
+Step 4 — Per-facility aggregation
+  For each facility, the full hourly time series for each metric is assembled
+  into a sorted list of { time, value } objects. Sorting is performed on the
+  ISO timestamp string, which sorts lexicographically in chronological order
+  for ISO 8601 dates.
+
+Step 5 — Snapshot extraction
+  The "latest snapshot" for each facility is the single most recent non-null
+  observation per metric. The timestamp of that observation is stored alongside
+  the value so the dashboard can display "as of [time]" labels.
+
+Step 6 — Derived calculations
+  Occupancy percentage = (census / total_beds) × 100, rounded to the nearest
+  integer. ICU occupancy percentage = (icu_occupied / icu_max) × 100.
+  Net patient flow = admissions − discharges over the most recent 24-hour window.
+  These are computed once at pipeline time and embedded in the JSON.
+
+────────────────────────────────────────────────────────────────────────────────
+3.  HANDLING MISSING, DUPLICATE, AND ANOMALOUS VALUES
+────────────────────────────────────────────────────────────────────────────────
+
+Missing values
+  Definition: A null cell, an empty string, or a zero value in a metric that
+  historically never reads zero (e.g., total census at a 300-bed hospital).
+
+  Handling:
+  - Null or empty cells: the time-series entry for that hour is omitted.
+    The chart renders a gap (connectNulls = false) rather than a misleading
+    interpolated value.
+  - Structural zeros (e.g., births = 0 on a given hour): retained as-is.
+    A zero birth count is a valid observation.
+  - Suspicious zeros in census/ICU: flagged in the console log but not
+    imputed. Imputing missing values without clinical verification could
+    produce false alerts; executives are better served by a visible gap
+    than an invented number.
+
+Duplicate rows
+  Definition: Two rows with identical (facility_id, metric_name, timestamp).
+
+  Handling:
+  - If both values are identical: the duplicate is silently dropped.
+  - If values differ: the mean of all duplicate values for that timestamp
+    is used and a warning is printed. This is conservative — it does not
+    prefer the first or last occurrence arbitrarily.
+
+Anomalous values (outlier detection)
+  Definition: A value that deviates from the 72-hour rolling mean by more
+  than 3 standard deviations.
+
+  Handling:
+  - The anomalous value is retained in the historical trend data so executives
+    can see it in the chart (real events should not be hidden).
+  - The value is excluded from the prediction model's training window to
+    prevent a single spike from distorting the forecast slope.
+  - A note is added to the affected facility's driver explanation panel
+    indicating that an outlier was detected and excluded from model training.
+
+Out-of-range capacity values
+  If a census value exceeds the recorded bed capacity for that facility (which
+  can legitimately occur during surge conditions when overflow beds are used),
+  the value is retained without modification. The dashboard displays the raw
+  occupancy percentage even if it exceeds 100%, with a distinct visual
+  indicator.
+
+────────────────────────────────────────────────────────────────────────────────
+4.  DETERMINISTIC CALCULATIONS AND REPRODUCIBILITY
+────────────────────────────────────────────────────────────────────────────────
+
+All calculations in this system are fully deterministic:
+
+  - No random seeds, no probabilistic sampling, no stochastic algorithms.
+  - Given the same input Excel file, the pipeline will always produce byte-for-
+    byte identical output JSON files.
+  - All arithmetic uses Python's built-in float and round() — no numpy or
+    pandas — eliminating library-version-dependent rounding differences.
+
+The prediction model components are equally deterministic:
+
+  EMA (Exponential Moving Average)
+    alpha = 0.2, applied sequentially to the 24-hour window.
+    Result depends only on the ordered sequence of input values.
+    Formula: EMA_t = 0.2 × value_t + 0.8 × EMA_{t-1}
+
+  Linear trend (OLS regression)
+    Computed over the 72-hour window using closed-form ordinary least squares.
+    No gradient descent, no iteration — exact algebraic solution every time.
+    Formula: slope = Σ[(x_i − x̄)(y_i − ȳ)] / Σ[(x_i − x̄)²]
+
+  Seasonal adjustment
+    Each (hour-of-day, day-of-week) combination is mapped to its historical
+    mean deviation from the overall mean. No interpolation between combinations.
+
+  Confidence band
+    width = 1.5 × σ × (1 + 0.5 × √(horizon_hours / 24))
+    σ is the standard deviation of the most recent 72 observations.
+    The widening factor is a deterministic function of forecast horizon only.
+
+Backtesting reproducibility:
+  The three validation windows (Jan 1–20, Jan 1–25, Jan 1–30) are hardcoded
+  date boundaries. Re-running the pipeline on the same data will always produce
+  the same MAE, RMSE, MAPE, Bias, and Coverage values.
+
+────────────────────────────────────────────────────────────────────────────────
+5.  TRANSFORMATIONS FROM RAW DATA TO DASHBOARD METRICS
+────────────────────────────────────────────────────────────────────────────────
+
+Below is the complete chain from a raw Excel row to every number shown on the
+dashboard.
+
+RAW EXCEL ROW EXAMPLE:
+  Facility: "Nashville Medical Center"
+  Metric:   "Total Census"
+  Time:     2026-02-06 22:00
+  Value:    334
+
+────────────────────────────────────────
+Transformation A: Latest Snapshot Card
+────────────────────────────────────────
+  Input  → (facility="nashville", metric="total_census", time="2026-02-06T22:00:00", value=334.0)
+  Step 1 → Round to integer: 334
+  Step 2 → Compare to facility beds (e.g., 340): occupancy = round(334/340×100) = 98%
+  Step 3 → Map occupancy to risk level: ≥90% = CRITICAL
+  Output → Capacity gauge shows 334/340 at 98%, red CRITICAL ring
+
+────────────────────────────────────────
+Transformation B: Trend Chart (Historical)
+────────────────────────────────────────
+  Input  → All hourly (time, value) pairs for total_census, filtered by date range
+  Step 1 → Sort ascending by ISO timestamp
+  Step 2 → Pass directly to Recharts as { time: "2026-02-06T22:00:00", census: 334 }
+  Step 3 → X-axis tick formatter: new Date(time) → "Fri 2/6"
+  Output → Solid green line showing census trend over selected period
+
+────────────────────────────────────────
+Transformation C: Forecast Chart (Predicted)
+────────────────────────────────────────
+  Input  → Last 72 hours of census data (168 hourly points)
+  Step 1 → Compute 24-hour EMA → baseline (e.g., 331.2)
+  Step 2 → Compute 72-hour OLS slope → trend contribution (+0.8 pts/hr)
+  Step 3 → Look up seasonal deviation for each future (hour, weekday) pair
+  Step 4 → predicted_t = EMA + slope × t × damping^(t/24) + seasonal_dev
+  Step 5 → Compute upper/lower bands using widening σ formula
+  Step 6 → Pass as { time, forecastCensus, upper, lower } — dashed purple line
+  Output → Dashed purple forecast line with translucent confidence band
+
+────────────────────────────────────────
+Transformation D: Alert Generation
+────────────────────────────────────────
+  Input  → Snapshot occupancy% + forecast peak%
+  Step 1 → Current alerts:
+             occupancy ≥ 90% → CRITICAL alert
+             occupancy ≥ 80% → WARNING alert
+             ICU ≥ 85%       → CRITICAL alert
+             ICU ≥ 75%       → WARNING alert
+  Step 2 → Forecast alerts (only if current is below threshold):
+             peak% ≥ 90% and current < 90% → WARNING with trust tag
+             peak% ≥ 80% and current < 80% → INFO with trust tag
+  Step 3 → Trust modifier:
+             avg MAPE ≤ 5%   → HIGH  → no qualifier
+             avg MAPE ≤ 12%  → MODERATE → append "(Moderate confidence)"
+             avg MAPE > 12%  → LOW   → downgrade severity, append "(Low confidence)"
+  Output → Alert panel with severity badge, trust badge, timestamp
+
+────────────────────────────────────────
+Transformation E: Accuracy Metrics (Validation)
+────────────────────────────────────────
+  Input  → Paired (predicted, actual) values from backtest window
+  Step 1 → errors = predicted − actual  (signed)
+  Step 2 → MAE = mean(|errors|)
+           RMSE = sqrt(mean(errors²))
+           MAPE = mean(|error| / actual × 100)  [only where actual > 0]
+           Bias = mean(errors)  [positive = model over-predicts]
+           Coverage = % of actuals where lower ≤ actual ≤ upper
+  Step 3 → Average across 3 windows → cross-window summary
+  Step 4 → Trust: avg MAPE ≤ 5% → HIGH, ≤ 12% → MODERATE, > 12% → LOW
+  Output → Accuracy metrics card with per-window and cross-window averages
+
+────────────────────────────────────────────────────────────────────────────────
+SUMMARY FOR EXECUTIVES
+────────────────────────────────────────────────────────────────────────────────
+
+Every number on the Hospital Command Center dashboard can be traced back to a
+specific row in the source Excel file through the transformation steps above.
+
+  ✓ No imputed or invented values
+  ✓ No black-box models — all calculations are documented formulas
+  ✓ All preprocessing steps are logged and auditable
+  ✓ Pipeline is fully reproducible from the same input file
+  ✓ Missing data shows as chart gaps, not silent zeros
+  ✓ Anomalies are visible in the chart but excluded from forecasting
+  ✓ Forecast confidence degrades transparently with horizon (wider bands)
+  ✓ Trust levels on alerts reflect measured prediction accuracy
+
+This pipeline was designed so that a hospital data team could independently
+verify any metric on the dashboard by re-running the open-source Python script
+against the original Excel file.
+
+================================================================================
+  END OF DOCUMENT
+  For questions: review the pipeline script at /data/process_data.py
+  or the full architecture at /README/ARCHITECTURE.md
+================================================================================
