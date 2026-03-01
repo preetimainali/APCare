@@ -1,191 +1,206 @@
-# INNOVATE
-
 # Hospital Command Center
 
-**Hackathon prototype for HCA Healthcare.** A responsive web application that visualizes hospital census data, occupancy and ICU capacity, trends over time, and predicted occupancy; generates alerts when thresholds are exceeded; and supports customization by facility and date range plus sharing of insights.
+**HCA Healthcare · Hackathon Prototype · Team INNOVATE**
 
-*(See [ARCHITECTURE.md](./ARCHITECTURE.md) for folder structure and system architecture.)*
-*(See [DATA_INTEGRITY.txt](./DATA_INTEGRITY.txt) for a full data integrity and processing summary.)*
-*(See [FULL_PROJECT_SUMMARY.txt](./FULL_PROJECT_SUMMARY.txt) for a comprehensive inventory of everything built.)*
+> An executive-ready capacity intelligence platform that transforms hospital census data into clear capacity visibility, predictive risk alerts, and role-based dashboards — designed for operational decision-making.
 
 ---
 
-## Hospital Census Early Warning System
+## Quick Links
 
-An executive-ready application that transforms high-frequency hospital census data into clear capacity visibility, predictive risk alerts, and role-based dashboards.
+| Document | Description |
+|----------|-------------|
+| [SETUP.md](./SETUP.md) | How to run the app locally |
+| [USER_GUIDE.md](./USER_GUIDE.md) | How to use the dashboard |
+| [TECHNICAL_DOCUMENTATION.md](./TECHNICAL_DOCUMENTATION.md) | Architecture, data pipeline, model, RBAC, alert logic |
+| [TESTING.md](./TESTING.md) | Functional, data validation, UI, and RBAC tests |
+| [AI_DISCLOSURE.md](./AI_DISCLOSURE.md) | AI tools used, example prompts, human oversight |
+| [DATA_INTEGRITY.txt](./DATA_INTEGRITY.txt) | Full data processing and reproducibility details |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Folder structure and system design |
+
+**Live repo:** https://github.com/preetimainali/APCare
 
 ---
 
-## Overview
+## Project Overview
 
-Hospital leaders need to quickly understand system stress and emerging capacity risks. This application ingests 15-minute census telemetry and surfaces the signals that matter most for operational decision-making.
+Hospital leaders need to quickly understand system stress and emerging capacity risks. This application ingests historical census telemetry for **10 HCA hospitals** and surfaces the signals that matter most:
 
-The focus is on **actionable early warning**, not raw data display.
+- **Where the system is right now** — live census, bed utilization, ICU pressure
+- **Where it is heading** — 7-day occupancy forecasts with confidence ranges
+- **What needs attention** — configurable threshold alerts and forecast-based early warnings
+- **Who should see what** — role-based access control tailored to each stakeholder
+
+The focus is **actionable early warning**, not raw data display.
 
 ---
 
 ## Key Features
 
 ### Executive Intelligence
-
-* System-wide risk summary
-* Ranked hospital risk view
-* ICU pressure indicators
-* Short-term occupancy forecasts
-* Real-time alert feed
+- System-wide and per-facility capacity overview
+- Bed Utilization gauge (green → amber → red)
+- ICU Risk indicator with multi-zone arc and needle
+- Real-time alert feed (critical / warning / info)
+- Slide-out Alert Drawer with expandable alert explanations
 
 ### Predictive Analytics
-
-* 2-hour ahead census forecasting
-* Confidence intervals
-* Surge detection
-* Model performance reporting
-
-> **Why this matters:** Short-horizon, explainable forecasts are more actionable for hospital operations than long-range black-box predictions.
+- 7-day occupancy forecast per facility (census + ICU)
+- Confidence interval bands that widen with horizon
+- Three-component explainable model: EMA + Linear Trend + Seasonal
+- Model trust levels (HIGH / MODERATE / LOW) based on measured MAPE
 
 ### Configurable Alerts
+- Threshold-based alerts (capacity and ICU)
+- Forecast-based early warning alerts
+- Alert suppression rules to prevent fatigue
+- Per-session threshold customization (persisted in browser)
+- Pop-up toast notifications
 
-* Threshold-based alerts
-* Surge alerts (rate-of-change)
-* Sustained stress detection
-* Alert deduplication
+### Role-Based Access Control
+- 4 built-in roles: Administrator, CNO, CFO, Data Analyst
+- Component-level permissions (not just page-level)
+- Custom role creation via Admin Panel
+- Persistent role selection
 
-> **Why this matters:** Alert deduplication prevents alert fatigue and ensures operators focus only on meaningful events.
+### Sharing & Export
+- PDF executive brief (jsPDF, client-side, no server)
+- CSV data export
+- Encoded share link preserving current view state
 
-### Role-Based Access Control (RBAC)
-
-* Executive (read-only global)
-* Hospital Operator (facility-scoped)
-* Regional Analyst (multi-facility)
-* System Admin (full control)
-
-Access is enforced at the **API layer** and filtered by facility assignment.
-
-> **Why this matters:** Server-side enforcement ensures users cannot access unauthorized facility data even if the UI is bypassed.
-
-### Sharing & Collaboration
-
-* Saveable views
-* Export capability (planned)
-* Protected share links (planned)
+### Validation Dashboard
+- Predicted vs Actual backtest charts
+- 3-window time-based validation (no data leakage)
+- Per-metric accuracy: MAE, RMSE, MAPE, Bias, Coverage
+- Prediction driver breakdown: EMA / Trend / Seasonal contributions
 
 ---
 
-## System Architecture
+## Setup
 
-### Data Pipeline
+```bash
+git clone https://github.com/preetimainali/APCare.git
+cd APCare/frontend
+npm install
+npm run dev
+```
 
-1. Ingest census telemetry
-2. Pivot metrics to wide format
-3. Join facility capacity metadata
-4. Generate derived features
-5. Evaluate alert rules
-6. Serve API endpoints
+Open **http://localhost:3000**
 
-### Machine Learning Pipeline
-
-* Lag-based time series forecasting
-* Gradient boosting model (LightGBM/XGBoost)
-* Time-based train/test validation
-* MAE reporting
-* Prediction intervals
-
-> **Why this matters:** Time-based validation avoids data leakage and produces realistic performance estimates for time-series data.
+> Full requirements and troubleshooting: [SETUP.md](./SETUP.md)
 
 ---
 
-## Data Description
+## Architecture
 
-### Source Characteristics
+```
+Excel source data
+     │
+     ▼ Python pipeline (openpyxl)
+     │
+     ├── facilities.json        ← facility metadata
+     ├── latest-snapshot.json   ← current metric values
+     ├── trends.json            ← hourly time series
+     ├── predictions.json       ← 7-day forecasts + drivers
+     └── validation.json        ← backtest accuracy metrics
+                │
+                ▼ imported at build time
+         Next.js 14 frontend
+         TypeScript · Tailwind · Recharts · jsPDF
+```
 
-* 10 hospitals
-* 15-minute update frequency
-* Multi-metric telemetry
+**No backend required for the prototype.** All data is pre-computed static JSON served directly to the browser. The architecture is designed to drop in a FastAPI backend without changing any component code.
 
-### Core Metrics
-
-* Total Census
-* ICU Occupancy
-* Admissions
-* Births
-* Discharges
-
-### Derived Signals
-
-* Overall occupancy %
-* ICU occupancy %
-* 1-hour census delta
-* Net patient flow
-* Forecasted census
-* Risk level
+> Full technical details: [TECHNICAL_DOCUMENTATION.md](./TECHNICAL_DOCUMENTATION.md)
 
 ---
 
-## Role-Based Access Model
+## Data
 
-| Role      | Scope               | Capabilities                     |
-| --------- | ------------------- | -------------------------------- |
-| Executive | All facilities      | View dashboards and alerts       |
-| Operator  | Assigned facilities | Configure alerts and view detail |
-| Analyst   | Multi-facility      | View forecasts and performance   |
-| Admin     | System-wide         | Manage users and access          |
+| Property | Value |
+|----------|-------|
+| Source | `HCA Census Metrics.xlsx` |
+| Facilities | 10 HCA hospitals |
+| Date range | January 1 – February 6, 2026 (observed) + Feb 7–13 (forecast) |
+| Metrics | Total Census, ICU Occupancy, Admissions, Discharges, Births |
+| Granularity | Hourly |
+| Forecast horizon | 7 days |
+| Forecast model | EMA (α=0.2) + OLS linear trend + (hour × weekday) seasonal |
 
-Facility-level scoping is applied to every data request.
+### Prediction Model
+
+```
+predicted(t) = EMA_baseline
+             + slope × t × damping^(t/24)    ← linear trend with horizon damping
+             + seasonal_deviation(hour, dow)  ← day-of-week + hour-of-day pattern
+
+confidence_band = 1.5σ × (1 + 0.5 × √(t/24))   ← widens with forecast horizon
+```
+
+All formulas are documented and deterministic — the same input always produces the same output.
+
+> Full pipeline description: [DATA_INTEGRITY.txt](./DATA_INTEGRITY.txt)
 
 ---
 
 ## Tech Stack
 
-**Backend**
-
-* FastAPI
-* Pandas
-* SQLite
-* APScheduler
-
-**Machine Learning**
-
-* LightGBM / XGBoost
-* Scikit-learn
-* SHAP (optional)
-
-**Frontend**
-
-* Next.js + Tailwind *(or Streamlit fallback)*
-* Recharts
-
-**AI Assistance**
-
-* Cursor — code generation and refactoring
-* ChatGPT — architecture and validation support
+| Layer | Technology |
+|-------|------------|
+| Framework | Next.js 14 (App Router) |
+| Language | TypeScript 5 |
+| Styling | Tailwind CSS 3.4 |
+| Charts | Recharts 2.12 |
+| Gauges | Inline SVG (no library) |
+| PDF export | jsPDF 4.2 |
+| State management | React Context |
+| Persistence | localStorage |
+| Data pipeline | Python 3 + openpyxl |
 
 ---
 
-## Model Validation Approach
+## Role-Based Access
 
-* Time-based train/test split
-* MAE and RMSE reporting
-* Residual review
-* Confidence interval generation
+| Role | Dashboard Panels | Validation |
+|------|-----------------|------------|
+| **Administrator** | All | All |
+| **Chief Nursing Officer** | Gauges · Overview · Alerts | — |
+| **CFO** | Capacity Gauge · Overview · Flow Trend | — |
+| **Data Analyst** | Flow Trend · Forecast · Alerts | All |
 
-The objective is **transparent and operationally trustworthy forecasting**.
-
----
-
-## AI Usage Disclosure
-
-AI tools were used to accelerate development with human oversight.
-
-**Tools Used**
-
-* Cursor — implementation acceleration
-* ChatGPT — architecture guidance and validation
-
-**Risk Mitigation**
-
-* Manual review of generated code
-* Validation of data transformations
-* Monitoring of model performance
+Switch roles using the dropdown in the top-right corner. Custom roles can be created via the Admin Panel.
 
 ---
 
+## AI Usage
+
+AI tools (Cursor, ChatGPT) were used to accelerate development under full human oversight. All generated code was reviewed and tested before use.
+
+> Full disclosure with example prompts: [AI_DISCLOSURE.md](./AI_DISCLOSURE.md)
+
+---
+
+## Documentation Package
+
+| File | Purpose | Required |
+|------|---------|---------|
+| `README.md` | Master overview (this file) | ✅ Mandatory |
+| `SETUP.md` | Local setup instructions | ✅ Mandatory |
+| `USER_GUIDE.md` | End-user documentation | ✅ Category 8 |
+| `TECHNICAL_DOCUMENTATION.md` | Architecture + model + RBAC + alerts | ✅ Technical |
+| `TESTING.md` | Test cases + results | ✅ Documentation & Testing |
+| `AI_DISCLOSURE.md` | AI tools, prompts, oversight | ✅ Mandatory |
+| `DATA_INTEGRITY.txt` | Full data processing chain | ✅ Data Integration |
+
+---
+
+## Submission
+
+- **Application:** Running at `http://localhost:3001` (or 3000)
+- **Repository:** https://github.com/preetimainali/APCare
+- **Team:** INNOVATE
+
+---
+
+*Designed for fast, trustworthy operational awareness across hospital systems.*
+*Hospital Command Center · HCA Healthcare Hackathon · v0.1.0 · February 2026*
