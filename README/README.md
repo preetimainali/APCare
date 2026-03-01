@@ -189,4 +189,3 @@ AI tools were used to accelerate development with human oversight.
 
 ---
 
-**Designed for fast, trustworthy operational awareness across hospital systems.**

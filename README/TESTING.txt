@@ -1,0 +1,616 @@
+================================================================================
+  HOSPITAL COMMAND CENTER — TESTING PROCEDURES
+  HCA Healthcare Hackathon Prototype
+  Date: March 1, 2026
+================================================================================
+
+
+TABLE OF CONTENTS
+─────────────────
+  1.  Testing Overview
+  2.  Environment Setup Verification
+  3.  Dashboard — Functional Tests
+  4.  Validation Page — Functional Tests
+  5.  Predictive Model Validation
+  6.  Alert System Tests
+  7.  Role-Based Access Control Tests
+  8.  Export & Sharing Tests
+  9.  Customization Tests
+  10. Data Integrity Verification
+  11. Cross-Browser Compatibility
+  12. Responsiveness Tests
+  13. Performance Checks
+  14. Known Limitations
+
+
+================================================================================
+1.  TESTING OVERVIEW
+================================================================================
+
+Testing approach: Manual testing (appropriate for a 24-hour hackathon prototype).
+
+The application has no automated test suite. All testing was performed manually
+using the procedures documented below. Each test case includes:
+
+  • ID          — unique identifier
+  • Area        — feature being tested
+  • Steps       — how to perform the test
+  • Expected    — what should happen
+  • Status      — PASS / FAIL / NOT TESTED
+
+For model validation, the application includes a dedicated Validation page that
+performs multi-window walk-forward backtesting with quantitative accuracy metrics.
+
+
+================================================================================
+2.  ENVIRONMENT SETUP VERIFICATION
+================================================================================
+
+TEST-ENV-01: Fresh Install
+  Steps:
+    1. Clone the repository
+    2. cd frontend
+    3. npm install
+    4. npm run dev
+  Expected:
+    • No install errors
+    • Dev server starts on http://localhost:3000
+    • Dashboard loads without console errors
+  Status: PASS
+
+TEST-ENV-02: Production Build
+  Steps:
+    1. cd frontend
+    2. npm run build
+    3. npm start
+  Expected:
+    • Build completes without errors
+    • Production server starts
+    • All pages load correctly
+  Status: PASS
+
+TEST-ENV-03: Lint Check
+  Steps:
+    1. cd frontend
+    2. npm run lint
+  Expected:
+    • No critical linting errors
+  Status: PASS
+
+
+================================================================================
+3.  DASHBOARD — FUNCTIONAL TESTS
+================================================================================
+
+TEST-DASH-01: Initial Load
+  Steps:
+    1. Open http://localhost:3000
+  Expected:
+    • Page loads within 3 seconds
+    • Header displays "Hospital Command Center" with HCA branding
+    • Status pills show Overall %, ICU %, Alert count
+    • System-wide view is the default (no facility selected)
+    • Capacity gauge, ICU gauge, and capacity overview grid are visible
+    • Unified timeline chart renders with historical data
+    • Alert panel shows current alerts
+  Status: PASS
+
+TEST-DASH-02: Facility Selection
+  Steps:
+    1. Click the hospital selector dropdown
+    2. Select a specific facility (e.g., "HCA Savannah GA")
+    3. Observe all dashboard components
+    4. Switch to "System-wide (all facilities)"
+  Expected:
+    • Dropdown shows 10 facilities plus system-wide option
+    • Selecting a facility updates all gauges, timeline, and alerts
+    • Metric values change to reflect the selected facility
+    • System-wide view aggregates all facilities
+  Status: PASS
+
+TEST-DASH-03: Capacity Gauge Display
+  Steps:
+    1. Load dashboard with system-wide view
+    2. Verify the semi-circle gauge
+    3. Select a high-occupancy facility
+    4. Select a low-occupancy facility
+  Expected:
+    • Gauge shows occupancy percentage prominently
+    • Color coding: green (<75%), amber (75–89%), red (>=90%)
+    • Status label: NORMAL / ELEVATED / CRITICAL
+    • Stats grid shows Census, Capacity, Available
+  Status: PASS
+
+TEST-DASH-04: ICU Risk Indicator
+  Steps:
+    1. Observe ICU gauge on dashboard
+    2. Switch between facilities with varying ICU load
+  Expected:
+    • Shows ICU occupancy percentage
+    • 4-zone risk: LOW, MODERATE, ELEVATED, CRITICAL
+    • Displays occupied/available counts
+    • Shows 7-day forecast peak when available
+  Status: PASS
+
+TEST-DASH-05: Capacity Overview Grid
+  Steps:
+    1. Verify the 6-stat grid below gauges
+  Expected:
+    • Total Beds, Census, Occupancy %, ICU, Net Flow, Births
+    • Percentages are color-coded by threshold
+    • Values update when facility changes
+  Status: PASS
+
+TEST-DASH-06: Unified Timeline Chart
+  Steps:
+    1. Observe the main chart
+    2. Hover over data points
+    3. Verify legend
+  Expected:
+    • Historical lines (green=census, amber=ICU) as solid lines
+    • Forecast lines (purple=census, orange=ICU) as dashed lines
+    • Confidence band visible as translucent area
+    • "Today" vertical marker at Feb 6, 2026
+    • Capacity and 90% threshold reference lines
+    • Tooltips on hover showing values
+  Status: PASS
+
+
+================================================================================
+4.  VALIDATION PAGE — FUNCTIONAL TESTS
+================================================================================
+
+TEST-VAL-01: Navigation
+  Steps:
+    1. Click "Validation" link in header navigation
+    2. Verify page loads
+  Expected:
+    • URL changes to /validation
+    • Page renders trust summary badges and system MAPE
+    • Explainer section visible
+  Status: PASS
+
+TEST-VAL-02: Risk Classification Table
+  Steps:
+    1. View the risk classification table
+    2. Verify all 10 facilities listed
+  Expected:
+    • Facilities sorted by risk tier severity
+    • Columns: Facility, Risk tier, Forecast trust, Peak, Capacity, Peak %, MAPE, Coverage
+    • Color-coded tiers: CRITICAL (red), HIGH (orange), MODERATE (amber), LOW (green)
+  Status: PASS
+
+TEST-VAL-03: Accuracy Metrics
+  Steps:
+    1. Select a facility
+    2. View accuracy metrics section
+    3. Toggle between "Cross-window avg" and individual windows
+  Expected:
+    • Summary shows averaged MAE, RMSE, MAPE, Bias, Coverage
+    • Individual windows show specific period metrics
+    • MAPE grade: Excellent (<=3%), Good (<=7%), Fair (<=15%), Poor (>15%)
+  Status: PASS
+
+TEST-VAL-04: Predicted vs Actual Charts
+  Steps:
+    1. Select a facility
+    2. View predicted vs actual chart
+    3. Switch between backtest windows via tabs
+  Expected:
+    • Green line = actual, Purple dashed = predicted
+    • Confidence band visible
+    • Tab switching updates the chart
+    • Census and ICU charts both render
+  Status: PASS
+
+TEST-VAL-05: Driver Breakdown
+  Steps:
+    1. View driver breakdown pie chart
+  Expected:
+    • Donut chart with EMA (blue), Trend (purple), Seasonal (green)
+    • Percentage bars with labels
+    • Descriptions for each driver component
+  Status: PASS
+
+
+================================================================================
+5.  PREDICTIVE MODEL VALIDATION
+================================================================================
+
+The prediction model is validated quantitatively through multi-window
+walk-forward backtesting, visible on the /validation page.
+
+TEST-PRED-01: Backtest Windows
+  Approach: Train on historical data, predict unseen future, compare
+  Windows:
+    Window 1: Train Jan 1–20  -> Predict Jan 21–27
+    Window 2: Train Jan 1–25  -> Predict Jan 26–Feb 1
+    Window 3: Train Jan 1–30  -> Predict Jan 31–Feb 6
+  Verification:
+    • Each window uses only past data for training (no data leakage)
+    • Predictions are generated for a full 7-day horizon
+    • Actuals are compared against predictions
+
+TEST-PRED-02: Accuracy Metrics Verification
+  Metrics checked per window:
+    • MAE  — Mean Absolute Error (patients)
+    • RMSE — Root Mean Squared Error (patients)
+    • MAPE — Mean Absolute Percentage Error (%)
+    • Bias — Average signed error (positive = over-prediction)
+    • Coverage — % of actuals within confidence bands
+  Expected:
+    • MAPE should be under 15% for most facilities (Fair or better)
+    • Coverage should be above 80% for meaningful confidence bands
+    • Bias should be small and not consistently positive or negative
+
+TEST-PRED-03: Trust Level Derivation
+  Rules:
+    • HIGH trust:      average MAPE <= 5%
+    • MODERATE trust:  average MAPE <= 12%
+    • LOW trust:       average MAPE > 12%
+  Verification:
+    • Trust badges on validation page match the computed MAPE ranges
+    • Trust level carries through to alert confidence tags
+
+TEST-PRED-04: Risk Classification
+  Rules:
+    • CRITICAL — forecast peak >= 95% of capacity
+    • HIGH     — forecast peak >= 90% of capacity
+    • MODERATE — forecast peak >= 80% of capacity
+    • LOW      — forecast peak < 80% of capacity
+  Verification:
+    • Risk tiers on validation page match peak forecast / capacity ratios
+    • Classifications are consistent across windows
+
+
+================================================================================
+6.  ALERT SYSTEM TESTS
+================================================================================
+
+TEST-ALERT-01: Default Alert Generation
+  Steps:
+    1. Load dashboard
+    2. Observe alert panel
+  Expected:
+    • Alerts generated based on default thresholds (80/90% capacity, 75/85% ICU)
+    • Critical alerts shown first
+    • Each alert has severity badge, facility name, message
+
+TEST-ALERT-02: Alert Expansion
+  Steps:
+    1. Click an alert in the panel
+  Expected:
+    • Expands to show "Why this alert was triggered"
+    • Shows threshold vs actual comparison
+    • Forecast alerts show trust level badge
+
+TEST-ALERT-03: Alert Settings Configuration
+  Steps:
+    1. Click gear icon in alert panel header
+    2. Adjust capacity warning threshold to 70%
+    3. Adjust ICU critical threshold to 80%
+    4. Save
+    5. Close and observe alert panel
+  Expected:
+    • Settings modal opens with sliders
+    • Sliders update visual range bars
+    • Validation: warning must be lower than critical
+    • After save, alerts regenerate with new thresholds
+    • New thresholds persist on page reload (localStorage)
+
+TEST-ALERT-04: Popup Toast Notifications
+  Steps:
+    1. In alert settings, enable "Popup Toast" notification style
+    2. Save and return to dashboard
+  Expected:
+    • Toast notifications appear at bottom-right
+    • Slide-in animation
+    • Auto-dismiss after 8 seconds
+    • Manual dismiss via X button
+
+TEST-ALERT-05: Alert Deduplication
+  Steps:
+    1. Observe alerts for a facility with both warning and critical issues
+  Expected:
+    • Info alerts suppressed when warning/critical exists for same category
+    • Suppressed count shown as summary note
+    • Per-facility cap (default: 4) prevents one facility from dominating
+
+TEST-ALERT-06: Forecast-Based Alerts
+  Steps:
+    1. Set forecast risk thresholds low enough to trigger alerts
+    2. Observe forecast alerts in the panel
+  Expected:
+    • Forecast badge appears on prediction-based alerts
+    • Trust level badge (HIGH/MODERATE/LOW) shows confidence
+    • Only fires when current value is below threshold but forecast exceeds it
+
+
+================================================================================
+7.  ROLE-BASED ACCESS CONTROL TESTS
+================================================================================
+
+TEST-RBAC-01: Role Switching
+  Steps:
+    1. Click role switcher dropdown in header
+    2. Switch to each built-in role
+  Expected:
+    • Dropdown lists all roles with active highlight
+    • Dashboard components change based on role
+    • Unauthorized pages show restricted message
+
+TEST-RBAC-02: Administrator Role
+  Steps:
+    1. Switch to Administrator
+  Expected:
+    • All pages accessible (Dashboard, Validation)
+    • All dashboard components visible
+    • All validation components visible
+    • All facilities accessible
+
+TEST-RBAC-03: CNO Role
+  Steps:
+    1. Switch to Chief Nursing Officer
+  Expected:
+    • Dashboard accessible
+    • Validation page restricted
+    • Only Gauge, ICU, Overview, Alerts visible on dashboard
+    • Timeline and other components hidden
+
+TEST-RBAC-04: Custom Role Creation
+  Steps:
+    1. Switch to Administrator
+    2. Click "Manage roles (Admin)" in role dropdown
+    3. Click "Create new role"
+    4. Set name, page access, component visibility, facility access
+    5. Save
+  Expected:
+    • Admin panel slides in from right
+    • Form validates role name is not empty
+    • New role appears in role switcher
+    • Switching to new role enforces configured permissions
+
+TEST-RBAC-05: Facility Scoping
+  Steps:
+    1. Create a custom role with access to only 2 specific facilities
+    2. Switch to that role
+    3. Open hospital selector
+  Expected:
+    • Only the 2 allowed facilities appear in the selector
+    • System-wide view aggregates only allowed facilities
+
+TEST-RBAC-06: Persistence Across Sessions
+  Steps:
+    1. Create a custom role and switch to it
+    2. Refresh the page
+  Expected:
+    • Custom role still exists
+    • Active role is restored
+    • Alert configuration persists
+
+
+================================================================================
+8.  EXPORT & SHARING TESTS
+================================================================================
+
+TEST-EXP-01: Export Modal
+  Steps:
+    1. Click "Export" button in header
+  Expected:
+    • Modal opens with KPI preview bar
+    • 6 report sections shown as toggleable cards
+    • All/None quick-select buttons work
+    • PDF and CSV buttons visible
+
+TEST-EXP-02: PDF Export
+  Steps:
+    1. Open export modal
+    2. Select at least 3 sections
+    3. Click "PDF"
+  Expected:
+    • PDF file downloads
+    • Opens with HCA-blue header, title, role, date
+    • Selected sections only
+    • Color-coded metric cards
+    • Page numbers and confidentiality footer
+
+TEST-EXP-03: CSV Export
+  Steps:
+    1. Open export modal
+    2. Select sections
+    3. Click "CSV"
+  Expected:
+    • CSV file downloads
+    • Contains structured data for selected sections
+    • Opens correctly in Excel or similar
+
+TEST-EXP-04: Share Modal
+  Steps:
+    1. Click "Share" button in header
+    2. View snapshot summary
+    3. Copy share link
+    4. Enter valid @hca.org email
+    5. Click "Send Secure Link"
+  Expected:
+    • Share link generated and copyable
+    • Email validation rejects non-@hca.org addresses
+    • Sending shows loading state
+    • Success screen shows simulated email preview
+    • 24-hour expiry notice displayed
+
+TEST-EXP-05: Share Email Validation
+  Steps:
+    1. Open share modal
+    2. Enter "user@gmail.com"
+    3. Attempt to send
+  Expected:
+    • Error message: only @hca.org addresses accepted
+    • Send button remains disabled or shows error
+
+TEST-EXP-06: Disabled Export State
+  Steps:
+    1. Open export modal
+    2. Click "None" to deselect all sections
+  Expected:
+    • PDF and CSV buttons are disabled
+    • Cannot export with no sections selected
+
+
+================================================================================
+9.  CUSTOMIZATION TESTS
+================================================================================
+
+TEST-CUST-01: Date Range Presets
+  Steps:
+    1. Click each date range preset (Last 7d, 14d, 30d, All history, All + forecast)
+  Expected:
+    • Timeline chart updates to show only selected range
+    • Status indicator shows "Includes forecast" or "Historical only"
+    • "All + forecast" extends chart past the "Today" marker
+
+TEST-CUST-02: Custom Date Range
+  Steps:
+    1. Set a custom From date
+    2. Set a custom To date
+  Expected:
+    • Timeline respects custom bounds
+    • Cannot set From > To
+    • Dates bounded by data range (Jan 1 – Feb 13)
+
+TEST-CUST-03: Alert Threshold Customization
+  Steps:
+    1. Open alert settings
+    2. Change all thresholds
+    3. Save and verify
+  Expected:
+    • Sliders responsive
+    • Warning cannot exceed critical (validation enforced)
+    • Changes reflected immediately in alert panel after save
+
+TEST-CUST-04: Max Alerts Per Facility
+  Steps:
+    1. Open alert settings
+    2. Adjust max alerts per facility (1–10)
+    3. Save
+  Expected:
+    • +/- buttons work correctly
+    • Alert panel respects the cap
+    • Suppressed count updates
+
+
+================================================================================
+10. DATA INTEGRITY VERIFICATION
+================================================================================
+
+TEST-DATA-01: Facility Count
+  Steps:
+    1. Open hospital selector
+  Expected:
+    • Exactly 10 facilities listed
+    • Each shows name and bed count
+
+TEST-DATA-02: Metric Consistency
+  Steps:
+    1. Select a facility
+    2. Compare dashboard values against latest-snapshot.json
+  Expected:
+    • Census, ICU, Admissions, Discharges, Births match JSON source
+    • Occupancy % = census / beds x 100
+    • ICU % = icu_occupancy / icuMax x 100
+
+TEST-DATA-03: Timeline Data Continuity
+  Steps:
+    1. Select "All + forecast" date range
+    2. Observe timeline chart
+  Expected:
+    • No gaps in historical data (Jan 1 – Feb 6)
+    • Forecast starts at Feb 6 and extends 7 days
+    • Historical-to-forecast transition is smooth
+
+TEST-DATA-04: Forecast Bound Integrity
+  Steps:
+    1. Observe forecast confidence bands on timeline
+  Expected:
+    • Upper bound > predicted > lower bound at all forecast points
+    • Bands widen as forecast horizon increases
+    • No negative predicted values
+
+
+================================================================================
+11. CROSS-BROWSER COMPATIBILITY
+================================================================================
+
+TEST-BROWSER-01: Chrome (primary)
+  Status: PASS — Full functionality verified
+
+TEST-BROWSER-02: Firefox
+  Status: PASS — All features functional
+
+TEST-BROWSER-03: Microsoft Edge
+  Status: PASS — All features functional
+
+TEST-BROWSER-04: Safari
+  Status: NOT TESTED — macOS not available during hackathon
+
+
+================================================================================
+12. RESPONSIVENESS TESTS
+================================================================================
+
+TEST-RESP-01: Desktop (1920x1080)
+  Expected: Full layout, side-by-side panels
+  Status: PASS
+
+TEST-RESP-02: Laptop (1366x768)
+  Expected: Layout adjusts, no horizontal scroll
+  Status: PASS
+
+TEST-RESP-03: Tablet (768px width)
+  Expected: Components stack vertically, remain readable
+  Status: PASS
+
+TEST-RESP-04: Mobile (375px width)
+  Expected: Single-column layout, touch-friendly controls
+  Status: PASS — Basic functionality, not optimized
+
+
+================================================================================
+13. PERFORMANCE CHECKS
+================================================================================
+
+TEST-PERF-01: Initial Page Load
+  Target: Dashboard loads in under 3 seconds on localhost
+  Status: PASS
+
+TEST-PERF-02: Facility Switch
+  Target: Dashboard updates in under 500ms when switching facility
+  Status: PASS
+
+TEST-PERF-03: Chart Rendering
+  Target: Timeline chart renders within 1 second on "All + forecast" range
+  Status: PASS
+
+TEST-PERF-04: Modal Open/Close
+  Target: Export, Share, and Alert Settings modals open instantly
+  Status: PASS
+
+
+================================================================================
+14. KNOWN LIMITATIONS
+================================================================================
+
+  • No automated test suite (manual testing only — appropriate for prototype)
+  • No end-to-end tests (e.g., Cypress, Playwright)
+  • No unit tests for data transformation logic
+  • Safari not tested
+  • Mobile layout is functional but not optimized
+  • Accessibility (ARIA) audit not performed
+  • No load testing (single-user prototype)
+  • Share links are decorative — no backend resolves them
+  • Email sending is simulated — no actual emails sent
+  • No CI/CD pipeline for automated test execution
+
+
+================================================================================
+  END OF TESTING DOCUMENT
+================================================================================
