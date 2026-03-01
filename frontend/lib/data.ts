@@ -63,9 +63,13 @@ export function getUnifiedTimeline(
 ): UnifiedTimelinePoint[] {
   const startMs = new Date(startDate).getTime();
   const endMs = new Date(endDate + "T23:59:59").getTime();
-  const currentMs = new Date(CURRENT_DATE + "T23:00:00").getTime();
 
   const map = new Map<string, UnifiedTimelinePoint>();
+  // Track how many facilities contributed each metric per timestamp so we can
+  // scale up partial timestamps (caused by missing source data) and avoid
+  // artificial dips when only some facilities have data for a given hour.
+  const censusCount = new Map<string, number>();
+  const icuCount = new Map<string, number>();
 
   for (const fid of facilityIds) {
     const trends = getTrends(fid);
@@ -75,6 +79,7 @@ export function getUnifiedTimeline(
         if (ms < startMs || ms > endMs) continue;
         const entry = map.get(pt.time) ?? { time: pt.time };
         entry.census = (entry.census ?? 0) + pt.value;
+        censusCount.set(pt.time, (censusCount.get(pt.time) ?? 0) + 1);
         map.set(pt.time, entry);
       }
       for (const pt of trends.icu_occupancy) {
@@ -82,6 +87,7 @@ export function getUnifiedTimeline(
         if (ms < startMs || ms > endMs) continue;
         const entry = map.get(pt.time) ?? { time: pt.time };
         entry.icu = (entry.icu ?? 0) + pt.value;
+        icuCount.set(pt.time, (icuCount.get(pt.time) ?? 0) + 1);
         map.set(pt.time, entry);
       }
       for (const pt of trends.admissions) {
@@ -101,11 +107,15 @@ export function getUnifiedTimeline(
     }
 
     const pred = getPredictions(fid);
+    // Only bridge if lastObservedAt falls on CURRENT_DATE — facilities whose
+    // last observation is before CURRENT_DATE should not paint their bridge
+    // as forecastCensus, which would make the purple line start too early.
+    const currentDayMs = new Date(CURRENT_DATE + "T00:00:00").getTime();
+
     if (pred?.total_census) {
-      // Bridge point: last actual = first forecast for continuity
       const bridgeTime = pred.total_census.lastObservedAt;
       const bridgeMs = new Date(bridgeTime).getTime();
-      if (bridgeMs >= startMs && bridgeMs <= endMs) {
+      if (bridgeMs >= startMs && bridgeMs <= endMs && bridgeMs >= currentDayMs) {
         const entry = map.get(bridgeTime) ?? { time: bridgeTime };
         entry.forecastCensus = (entry.forecastCensus ?? 0) + pred.total_census.lastObserved;
         map.set(bridgeTime, entry);
@@ -126,7 +136,7 @@ export function getUnifiedTimeline(
     if (pred?.icu_occupancy) {
       const bridgeTime = pred.icu_occupancy.lastObservedAt;
       const bridgeMs = new Date(bridgeTime).getTime();
-      if (bridgeMs >= startMs && bridgeMs <= endMs) {
+      if (bridgeMs >= startMs && bridgeMs <= endMs && bridgeMs >= currentDayMs) {
         const entry = map.get(bridgeTime) ?? { time: bridgeTime };
         entry.forecastIcu = (entry.forecastIcu ?? 0) + pred.icu_occupancy.lastObserved;
         map.set(bridgeTime, entry);
@@ -139,6 +149,36 @@ export function getUnifiedTimeline(
         entry.forecastIcu = (entry.forecastIcu ?? 0) + fp.predicted;
         map.set(fp.time, entry);
       }
+    }
+  }
+
+  // Normalize timestamps where fewer than all facilities had data.
+  // Scale the partial sum up to an estimated full-coverage value, then round
+  // everything to whole numbers (census data is always integer patients).
+  if (facilityIds.length > 1) {
+    for (const [time, entry] of map.entries()) {
+      const cCount = censusCount.get(time) ?? 0;
+      if (entry.census != null && cCount > 0 && cCount < facilityIds.length) {
+        entry.census = Math.round((entry.census * facilityIds.length) / cCount);
+      } else if (entry.census != null) {
+        entry.census = Math.round(entry.census);
+      }
+      const iCount = icuCount.get(time) ?? 0;
+      if (entry.icu != null && iCount > 0 && iCount < facilityIds.length) {
+        entry.icu = Math.round((entry.icu * facilityIds.length) / iCount);
+      } else if (entry.icu != null) {
+        entry.icu = Math.round(entry.icu);
+      }
+    }
+  } else {
+    // Single facility — just round to whole numbers
+    for (const entry of map.values()) {
+      if (entry.census != null) entry.census = Math.round(entry.census);
+      if (entry.icu != null) entry.icu = Math.round(entry.icu);
+      if (entry.forecastCensus != null) entry.forecastCensus = Math.round(entry.forecastCensus);
+      if (entry.forecastIcu != null) entry.forecastIcu = Math.round(entry.forecastIcu);
+      if (entry.upper != null) entry.upper = Math.round(entry.upper);
+      if (entry.lower != null) entry.lower = Math.round(entry.lower);
     }
   }
 

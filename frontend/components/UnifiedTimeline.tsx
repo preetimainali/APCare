@@ -109,6 +109,8 @@ export function UnifiedTimeline({ data, totalBeds, icuMax, currentDate, showAdmD
               yAxisId="main"
               tick={{ fill: "#c9d1d9", fontSize: 10 }}
               width={48}
+              allowDecimals={false}
+              tickFormatter={(v: number) => Math.round(v).toString()}
             />
             {hasAdm && (
               <YAxis
@@ -128,6 +130,7 @@ export function UnifiedTimeline({ data, totalBeds, icuMax, currentDate, showAdmD
               }}
               labelStyle={{ color: "#e6edf3" }}
               itemStyle={{ color: "#c9d1d9" }}
+              formatter={(value: number) => [Math.round(value).toString(), undefined]}
               labelFormatter={(v: string) => {
                 const d = new Date(v);
                 const isFuture = d.getTime() > new Date(currentDateIso).getTime();
